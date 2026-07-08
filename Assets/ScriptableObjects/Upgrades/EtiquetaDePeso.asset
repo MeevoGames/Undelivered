@@ -11,10 +11,16 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c4e5f6a7b8091a2b3c4d5e6f70819a2b, type: 3}
   m_Name: EtiquetaDePeso
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   icon: {fileID: 0}
   upgradeName: Etiqueta de Peso
-  description: El 80% de las cajas traen su peso escrito.
-  price: 90
+  description: Un porcentaje de cajas trae su peso escrito.
+  descriptionForTooltip: Agrega una etiqueta con el peso de cada caja. 25/50/75/100%
+  levelPrices: 7800000004010000f40100000c030000
+  valuePerLevel:
+  - 0.25
+  - 0.5
+  - 0.75
+  - 1
   feature: 1
-  weightLabelChance: 0.8
+  autoStampFlatBonus: 2

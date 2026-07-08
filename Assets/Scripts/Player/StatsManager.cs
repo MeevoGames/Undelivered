@@ -11,6 +11,9 @@ namespace Undelivered.Player
     {
         public static StatsManager Instance { get; private set; }
 
+        /// <summary>Chance (0..1) to avoid a trust loss. Set by the "Asegura la confianza" upgrade.</summary>
+        public static float TrustLossProtection;
+
         [SerializeField] private int gold;
 
         [Tooltip("Player trust. Starts at 10 on day one.")]

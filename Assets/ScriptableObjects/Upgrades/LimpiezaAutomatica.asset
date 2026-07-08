@@ -11,12 +11,19 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c4e5f6a7b8091a2b3c4d5e6f70819a2b, type: 3}
   m_Name: LimpiezaAutomatica
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   icon: {fileID: 0}
-  upgradeName: Limpieza automática
+  upgradeName: "Limpieza autom\xE1tica"
   description: La basura va sola a la papelera, algo lenta.
-  price: 100
+  descriptionForTooltip: "La basura se mueve a la papelera de forma autom\xE1tica.
+    7/4/2s."
+  levelPrices:
+  - 110
+  - 250
+  - 480
+  valuePerLevel:
+  - 7
+  - 4
+  - 2
   feature: 3
-  weightLabelChance: 0.8
-  stampMultiplier: 1.5
   autoStampFlatBonus: 2

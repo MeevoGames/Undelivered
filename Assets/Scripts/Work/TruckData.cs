@@ -25,8 +25,14 @@ namespace Undelivered.Work
             public bool isDice;
         }
 
+        [Tooltip("Shown as the hover tooltip.")]
+        [SerializeField, TextArea] private string descriptionForTooltip;
+
         [Tooltip("Gold cost to buy this truck in the shop.")]
         [SerializeField] private int price = 100;
+
+        [Tooltip("How many times this truck can be bought in a run (stock limit).")]
+        [SerializeField] private int stock = 3;
 
         [Tooltip("Total number of boxes this truck brings.")]
         [SerializeField] private int totalBoxes = 10;
@@ -34,12 +40,25 @@ namespace Undelivered.Work
         [Tooltip("Average weight of this truck's boxes; each box weighs this plus a random -10..+5.")]
         [SerializeField] private int averageWeight = 20;
 
+        [Header("Broken boxes")]
+        [Tooltip("Chance this truck's delivery brings any broken boxes at all.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float brokenChance = 0f;
+
+        [Tooltip("When broken boxes come, the fraction of the delivery that is broken.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float brokenPortion = 0.5f;
+
         [Tooltip("Chance (percentage / weight) of each box type. Rolled independently for every box.")]
         [SerializeField] private List<BoxChance> boxChances = new List<BoxChance>();
 
+        public string DescriptionForTooltip => descriptionForTooltip;
         public int Price => Mathf.Max(0, price);
+        public int Stock => Mathf.Max(0, stock);
         public int TotalBoxes => Mathf.Max(0, totalBoxes);
         public int AverageWeight => averageWeight;
+        public float BrokenChance => brokenChance;
+        public float BrokenPortion => brokenPortion;
         public IReadOnlyList<BoxChance> BoxChances => boxChances;
 
         /// <summary>Rolls a random weight for a box of this truck: average plus a random -10..+5.</summary>

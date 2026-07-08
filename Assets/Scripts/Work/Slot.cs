@@ -5,15 +5,12 @@ using UnityEngine.EventSystems;
 namespace Undelivered.Work
 {
     /// <summary>
-    /// A destination slot (International / National / Local ...). Any box can be dropped on it.
-    /// On drop it compares the box type with the slot type: a correct match pays the box's gold,
-    /// a mismatch costs half of it (rounded up). Either way the box is consumed, the player's gold
-    /// is updated (it may go negative), and the day stats are recorded. The floating gold text is
-    /// spawned by StatsToHUD in reaction to the gold change.
-    ///
-    /// Requires a raycast-target Graphic (e.g. an Image with Raycast Target on) so drops register.
+    /// A destination slot (International / National / Local ...). A box dropped (or delivered by an
+    /// automation) is classified: a correct match pays its gold (broken boxes pay half, stamped boxes
+    /// a bonus), a mismatch costs half. Either way the box is consumed. Clicking the slot delivers all
+    /// boxes the forklift is carrying. Requires a raycast-target Graphic so drops/clicks register.
     /// </summary>
-    public class Slot : MonoBehaviour, IDropHandler
+    public class Slot : MonoBehaviour, IDropHandler, IPointerClickHandler
     {
         [SerializeField] private BoxType slotType;
 
@@ -38,17 +35,41 @@ namespace Undelivered.Work
                 return;
             }
 
+            Deliver(box);
+        }
+
+        // Right-clicking a slot while the forklift is carrying boxes delivers them all here.
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData.button == PointerEventData.InputButton.Right
+                && Forklift.Instance != null && Forklift.Instance.HasBoxes)
+            {
+                Forklift.Instance.DeliverAllTo(this);
+            }
+        }
+
+        /// <summary>Classifies and consumes a box in this slot (used by drops, forklift and the sorting arm).</summary>
+        public void Deliver(Box box)
+        {
+            if (box == null)
+            {
+                return;
+            }
+
             int baseReward = BoxManager.Instance != null ? BoxManager.Instance.GetGoldReward(box.Type) : 0;
+            if (box.IsBroken)
+            {
+                baseReward = Mathf.RoundToInt(baseReward * 0.5f); // a broken (fallado) box pays half
+            }
 
             int delta;
             if (box.Type == slotType)
             {
-                // A stamped box pays a bonus when correctly delivered (x1.5 manual, +2 flat auto).
                 int reward = box.HasStamp
                     ? Mathf.RoundToInt(baseReward * Box.StampRewardMultiplier) + Box.StampRewardFlat
                     : baseReward;
                 delta = reward;
-                Debug.Log($"+{reward} oro — caja {box.Type} clasificada correctamente en slot {slotType}{(box.HasStamp ? " (sellada x1.5)" : "")}.");
+                Debug.Log($"+{reward} oro — caja {box.Type} clasificada correctamente en slot {slotType}.");
                 if (DayManager.Instance != null)
                 {
                     DayManager.Instance.RegisterCorrectDelivery(box.Type, reward);
@@ -70,7 +91,7 @@ namespace Undelivered.Work
                 StatsManager.Instance.AddGold(delta);
             }
 
-            Destroy(box.gameObject); // the box is consumed whether correct or not
+            Destroy(box.gameObject);
         }
     }
 }

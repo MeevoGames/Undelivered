@@ -11,10 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c4e5f6a7b8091a2b3c4d5e6f70819a2b, type: 3}
   m_Name: Balanza
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   icon: {fileID: 0}
   upgradeName: Balanza
-  description: Pesá una caja al dejarla en la balanza.
-  price: 80
+  description: "Pes\xE1 una caja al dejarla en la balanza."
+  descriptionForTooltip: "Pes\xE1 una caja al dejarla en la balanza. Las cajas m\xE1s
+    pesadas probablemente traigan m\xE1s dinero."
+  levelPrices: 5a000000
+  valuePerLevel: []
   feature: 0
-  weightLabelChance: 0.8
+  autoStampFlatBonus: 2

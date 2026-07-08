@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e2d3c4b5a6978869504a3b2c1d0e0f1, type: 3}
+  m_Name: Level3
+  m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Progression.LevelData
+  quota: 100
+  truckStocks:
+  - truck: {fileID: 11400000, guid: 87bc915a1d1f6c640811ce76ae088fb9, type: 2}
+    stock: 5
+  - truck: {fileID: 11400000, guid: b2a11c60f75ca5a4d89ff4a00a8105b4, type: 2}
+    stock: 3
+  - truck: {fileID: 11400000, guid: 65343a30b281baf448e720a367429f45, type: 2}
+    stock: 2
+  - truck: {fileID: 11400000, guid: c258b4b39e75a3f48bc5409c0fd6e3f1, type: 2}
+    stock: 1
+  - truck: {fileID: 11400000, guid: 385599330b4a6ea48b3b20208b271bda, type: 2}
+    stock: 1
+  availableUpgrades:
+  - {fileID: 11400000, guid: 4a1f3cf2bd3d9c74ba45b00d79387f46, type: 2}
+  - {fileID: 11400000, guid: 1ccde1f2bdf32f34a969386e264db898, type: 2}
+  - {fileID: 11400000, guid: 71a53209d191fbd4e907fdd845cbcbd1, type: 2}
+  - {fileID: 11400000, guid: d8705432ad2eb204080f633b0e1f9758, type: 2}
+  - {fileID: 11400000, guid: c9c45270b20ba124b85ac0a9ef21f9da, type: 2}
+  - {fileID: 11400000, guid: 9272262757bcec14395b819a07dee339, type: 2}
+  - {fileID: 11400000, guid: b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7, type: 2}
+  - {fileID: 11400000, guid: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6, type: 2}
+  - {fileID: 11400000, guid: e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0, type: 2}

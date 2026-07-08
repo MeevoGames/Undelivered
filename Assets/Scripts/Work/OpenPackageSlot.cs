@@ -41,15 +41,19 @@ namespace Undelivered.Work
 
             BoxManager manager = BoxManager.Instance;
 
-            // Opening always costs trust (dice boxes cost more).
-            int trustCost = manager != null ? manager.GetTrustCost(box.Type, box.IsDice) : 0;
-            if (StatsManager.Instance != null)
+            // Opening costs trust (dice boxes cost more), unless the trust-protection upgrade saves it.
+            int trustCost = manager != null ? manager.GetTrustCost(box.IsDice) : 0;
+            bool trustProtected = Random.value < StatsManager.TrustLossProtection;
+            if (!trustProtected)
             {
-                StatsManager.Instance.AddTrust(-trustCost);
-            }
-            if (DayManager.Instance != null)
-            {
-                DayManager.Instance.RegisterTrustLost(trustCost);
+                if (StatsManager.Instance != null)
+                {
+                    StatsManager.Instance.AddTrust(-trustCost);
+                }
+                if (DayManager.Instance != null)
+                {
+                    DayManager.Instance.RegisterTrustLost(trustCost);
+                }
             }
 
             // Reward: dice boxes give a gift card for the night game; others give random gold.

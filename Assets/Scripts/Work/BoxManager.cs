@@ -4,8 +4,9 @@ using UnityEngine;
 namespace Undelivered.Work
 {
     /// <summary>
-    /// Central configuration for box types: label sprite, classification gold reward, the random
-    /// gold range awarded when opened, and the trust it costs to open (with and without dice).
+    /// Central configuration for box types: label sprite and classification gold reward. Opening a
+    /// box is derived from that reward by the box's weight, and costs a fixed amount of trust (more
+    /// with dice). The trust loss only applies when the player's trust protection doesn't save it.
     /// </summary>
     public class BoxManager : MonoBehaviour
     {
@@ -15,30 +16,19 @@ namespace Undelivered.Work
             public BoxType type;
             public Sprite labelSprite;
 
-            [Tooltip("Gold paid when this box is correctly classified.")]
+            [Tooltip("Gold paid when this box is correctly classified (also the base for opening).")]
             public int goldReward;
-
-            [Header("On open")]
-            [Tooltip("Minimum gold awarded when this box is opened (non-dice boxes).")]
-            public int openGoldMin;
-            [Tooltip("Maximum gold awarded when this box is opened (non-dice boxes).")]
-            public int openGoldMax;
-
-            [Tooltip("Trust lost when opened without a dice label.")]
-            public int trustCostOnOpen;
-            [Tooltip("Trust lost when opened with a dice label.")]
-            public int trustCostOnOpenWithDice;
         }
 
         public static BoxManager Instance { get; private set; }
 
         [SerializeField] private List<BoxTypeConfig> boxTypes = new List<BoxTypeConfig>();
 
-        [Header("Weight -> open gold bias")]
-        [Tooltip("Box weight at/below which open gold is unbiased (uniform).")]
-        [SerializeField] private float lightWeight = 0f;
-        [Tooltip("Box weight at/above which open gold rolls near the maximum.")]
-        [SerializeField] private float heavyWeight = 30f;
+        [Header("Trust cost on open")]
+        [Tooltip("Trust lost when a box is opened (before trust protection).")]
+        [SerializeField] private int trustCostOnOpen = 1;
+        [Tooltip("Trust lost when a box with dice is opened (before trust protection).")]
+        [SerializeField] private int trustCostOnOpenWithDice = 2;
 
         private readonly Dictionary<BoxType, BoxTypeConfig> _lookup = new Dictionary<BoxType, BoxTypeConfig>();
 
@@ -81,37 +71,35 @@ namespace Undelivered.Work
             return _lookup.TryGetValue(type, out BoxTypeConfig config) ? config.labelSprite : null;
         }
 
-        /// <summary>Gold paid by correctly classifying the given box type, or 0 if none is configured.</summary>
+        /// <summary>Gold paid by correctly classifying the given box type (also the base for opening).</summary>
         public int GetGoldReward(BoxType type)
         {
             return _lookup.TryGetValue(type, out BoxTypeConfig config) ? config.goldReward : 0;
         }
 
-        /// <summary>Trust lost when opening a box of the given type, higher when it carries dice.</summary>
-        public int GetTrustCost(BoxType type, bool isDice)
+        /// <summary>Trust lost when opening a box (fixed; more if it carries dice).</summary>
+        public int GetTrustCost(bool isDice)
         {
-            if (_lookup.TryGetValue(type, out BoxTypeConfig config))
-            {
-                return isDice ? config.trustCostOnOpenWithDice : config.trustCostOnOpen;
-            }
-            return 0;
+            return isDice ? trustCostOnOpenWithDice : trustCostOnOpen;
         }
 
         /// <summary>
-        /// Random gold awarded when opening a non-dice box. Heavier boxes bias the roll toward the
-        /// maximum, so they are more likely to pay a lot.
+        /// Gold from opening a box, based only on its weight relative to the type's base reward:
+        /// under 10kg = half the base; 10-20kg = base -2..+4; over 20kg = base x2..x3.
         /// </summary>
         public int RollOpenGold(BoxType type, float weight)
         {
-            if (_lookup.TryGetValue(type, out BoxTypeConfig config))
+            int baseGold = GetGoldReward(type);
+
+            if (weight < 10f)
             {
-                int min = Mathf.Min(config.openGoldMin, config.openGoldMax);
-                int max = Mathf.Max(config.openGoldMin, config.openGoldMax);
-                float bias = Mathf.Clamp01(Mathf.InverseLerp(lightWeight, heavyWeight, weight));
-                float roll = Mathf.Lerp(Random.value, 1f, bias); // heavier -> closer to the max
-                return Mathf.RoundToInt(Mathf.Lerp(min, max, roll));
+                return Mathf.RoundToInt(baseGold * 0.5f);
             }
-            return 0;
+            if (weight <= 20f)
+            {
+                return Random.Range(Mathf.Max(0, baseGold - 2), baseGold + 5); // inclusive [base-2, base+4]
+            }
+            return Random.Range(baseGold * 2, baseGold * 3 + 1); // inclusive [base*2, base*3]
         }
     }
 }

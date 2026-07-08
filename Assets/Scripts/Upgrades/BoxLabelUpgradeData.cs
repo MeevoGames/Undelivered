@@ -4,9 +4,9 @@ using UnityEngine;
 namespace Undelivered.Upgrades
 {
     /// <summary>
-    /// Upgrade that reveals one of the box labels: the direction label (Etiquetadora) or the dice
-    /// label (Etiqueta de dados). Buying it turns the matching toggle on and refreshes the boxes
-    /// already on the table.
+    /// Upgrade that reveals a box label. The direction label (Etiquetadora) is leveled: each level
+    /// sets the per-box chance from <see cref="UpgradeData.ValueForLevel"/> (50/75/100%). The dice
+    /// label (Etiqueta de dados) is a single-level toggle for every box.
     /// </summary>
     [CreateAssetMenu(fileName = "BoxLabelUpgrade", menuName = "Undelivered/Upgrades/Box Label")]
     public class BoxLabelUpgradeData : UpgradeData
@@ -15,22 +15,26 @@ namespace Undelivered.Upgrades
 
         [SerializeField] private Label label;
 
-        public override void Apply()
+        public override void Apply(int level)
         {
             switch (label)
             {
                 case Label.Direction:
-                    Box.ShowDirectionLabel = true;
+                    Box.DirectionLabelChance = ValueForLevel(level);
+                    foreach (Box box in FindObjectsByType<Box>())
+                    {
+                        box.RollDirectionLabel();
+                        box.RefreshLabels();
+                    }
                     break;
+
                 case Label.Dice:
                     Box.ShowDiceLabel = true;
+                    foreach (Box box in FindObjectsByType<Box>())
+                    {
+                        box.RefreshLabels();
+                    }
                     break;
-            }
-
-            // Reveal the label on boxes that are already on the table.
-            foreach (Box box in FindObjectsByType<Box>())
-            {
-                box.RefreshLabels();
             }
         }
     }

@@ -12,6 +12,9 @@ namespace Undelivered.Work
     /// </summary>
     public class TruckManager : MonoBehaviour
     {
+        // "Centro de Distribución" upgrade: multiplies the boxes every truck brings.
+        public static float BoxCountMultiplier = 1f;
+
         [Tooltip("Trucks the player already owns at the start of the day. The shop spawns extra trucks at runtime.")]
         [SerializeField] private List<TruckData> purchasedTrucks = new List<TruckData>();
 
@@ -19,6 +22,9 @@ namespace Undelivered.Work
                  "they don't all look the same. The choice is purely visual and independent of the " +
                  "box type. Each must have a Box component.")]
         [SerializeField] private Box[] boxPrefabs;
+
+        [Tooltip("Prefab used for broken boxes (a broken duplicate of a box). Must have a Box component.")]
+        [SerializeField] private Box brokenBoxPrefab;
 
         [Tooltip("Table (a RectTransform under the Canvas) where boxes are placed as children.")]
         [SerializeField] private RectTransform table;
@@ -32,32 +38,30 @@ namespace Undelivered.Work
 
         private void Start()
         {
-            foreach (TruckData truck in purchasedTrucks)
-            {
-                if (truck != null)
-                {
-                    SpawnTruck(truck);
-                }
-            }
+            SpawnTruck(purchasedTrucks[0], 5);
         }
 
         /// <summary>Spawns all the boxes of a truck; each slides in from above onto the table.</summary>
-        public void SpawnTruck(TruckData truck)
+        public void SpawnTruck(TruckData truck, int limit = -1)
         {
-            if (truck == null)
-            {
-                return;
-            }
+            if (truck == null) return;
+
             if (boxPrefabs == null || boxPrefabs.Length == 0 || table == null)
             {
                 Debug.LogWarning($"{nameof(TruckManager)} needs at least one box prefab and a table assigned.", this);
                 return;
             }
 
-            int count = truck.TotalBoxes;
+            bool bringsBroken = Random.value < truck.BrokenChance;
+
+            int count = Mathf.Max(0, Mathf.RoundToInt(truck.TotalBoxes * BoxCountMultiplier));
             for (int i = 0; i < count; i++)
             {
-                Box prefab = boxPrefabs[Random.Range(0, boxPrefabs.Length)];
+                if (limit > 0 && i >= limit) { break; }
+
+                bool broken = bringsBroken && brokenBoxPrefab != null && Random.value < truck.BrokenPortion;
+
+                Box prefab = broken ? brokenBoxPrefab : boxPrefabs[Random.Range(0, boxPrefabs.Length)];
                 if (prefab == null)
                 {
                     continue; // empty slot in the array; skip

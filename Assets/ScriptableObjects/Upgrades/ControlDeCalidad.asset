@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4e5f6a7b8091a2b3c4d5e6f70819a2b, type: 3}
+  m_Name: ControlDeCalidad
+  m_EditorClassIdentifier: 
+  icon: {fileID: 0}
+  upgradeName: Control de Calidad
+  description: Un brazo arregla las cajas rotas solo.
+  descriptionForTooltip: Un brazo lleva las cajas rotas a reempaquetar y las devuelve
+    arregladas a la mesa. Cada nivel cambia su velocidad.
+  levelPrices:
+  - 900
+  - 1600
+  valuePerLevel:
+  - 250
+  - 400
+  prerequisite: {fileID: 11400000, guid: a8756dfea68c1f446bb03faad0096fbc, type: 2}
+  feature: 10
+  autoStampFlatBonus: 2

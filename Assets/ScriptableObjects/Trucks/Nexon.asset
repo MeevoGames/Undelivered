@@ -12,14 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3a031c7b3dd8b349a102b2623c9d8ec, type: 3}
   m_Name: Nexon
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Work.TruckData
-  price: 70
+  descriptionForTooltip: NEXON es una marca fuerte, conocida internacionalmente por
+    su velocidad. Trae 8 cajas.
+  price: 120
+  stock: 6
   totalBoxes: 8
+  averageWeight: 18
+  brokenChance: 0
+  brokenPortion: 0.5
   boxChances:
-  - type: 0
-    percent: 10
   - type: 1
-    percent: 20
+    percent: 5
   - type: 2
-    percent: 35
+    percent: 15
   - type: 3
-    percent: 35
+    percent: 80

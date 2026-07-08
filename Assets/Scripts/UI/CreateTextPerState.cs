@@ -23,7 +23,6 @@ namespace Undelivered.UI
         [Header("Spaces (parents per stat)")]
         [SerializeField] private GameObject goldSpace;
         [SerializeField] private GameObject trustSpace;
-        [SerializeField] private GameObject diceSpace;
 
         [Header("Colors")]
         [SerializeField] private Color goldPositive = new Color(1f, 0.85f, 0.2f);
@@ -90,12 +89,11 @@ namespace Undelivered.UI
             {
                 case StatType.Gold: return goldSpace;
                 case StatType.Trust: return trustSpace;
-                case StatType.Dice: return diceSpace;
                 default: return null;
             }
         }
 
-        private Color GetColor(StatType stat, int value)
+        public Color GetColor(StatType stat, int value)
         {
             switch (stat)
             {

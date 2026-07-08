@@ -71,7 +71,7 @@ namespace Undelivered.Work
 
             if (directionLabel != null)
             {
-                bool show = Box.ShowDirectionLabel;
+                bool show = box.HasDirectionLabel;
                 if (show && manager != null)
                 {
                     directionLabel.sprite = manager.GetLabelSprite(box.Type);

@@ -1,4 +1,5 @@
 using TMPro;
+using Undelivered.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,6 +11,9 @@ namespace Undelivered.Items
         [SerializeField] private Image icon;
         [SerializeField] private TextMeshProUGUI nameText;
         [SerializeField] private TextMeshProUGUI descriptionText;
+
+        [Tooltip("Tooltip trigger for the hover description (auto-found on this object if left empty).")]
+        [SerializeField] private TooltipTrigger tooltip;
 
         public GiftCardData Card { get; private set; }
 
@@ -32,6 +36,15 @@ namespace Undelivered.Items
             if (descriptionText != null)
             {
                 descriptionText.text = card.Description;
+            }
+
+            if (tooltip == null)
+            {
+                tooltip = GetComponent<TooltipTrigger>();
+            }
+            if (tooltip != null)
+            {
+                tooltip.SetMessage(card.DescriptionForTooltip);
             }
         }
     }

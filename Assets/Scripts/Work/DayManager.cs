@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using Undelivered.Player;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Undelivered.Work
 {
@@ -21,6 +22,7 @@ namespace Undelivered.Work
         private int incorrectDeliveries;
         private int trustLostToday;
         private int itemsObtained;
+        private int quota;
         private readonly Dictionary<BoxType, int> _correctByType = new Dictionary<BoxType, int>();
         private bool finished;
 
@@ -43,12 +45,19 @@ namespace Undelivered.Work
         [Tooltip("Number of gift-card items obtained this day.")]
         [SerializeField] private TextMeshProUGUI itemsObtainedText;
 
+        [Header("Quota")]
+        [Tooltip("Live quota progress text, e.g. \"12/30\".")]
+        [SerializeField] private TextMeshProUGUI quotaText;
+        [Tooltip("Finish-day button, enabled only once the quota is met.")]
+        [SerializeField] private Button finishDayButton;
+
         public int GoldSpent => goldSpent;
         public int GoldGenerated => goldGenerated;
         public int GoldLost => goldLost;
         public int CorrectDeliveries => correctDeliveries;
         public int IncorrectDeliveries => incorrectDeliveries;
         public int ItemsObtained => itemsObtained;
+        public bool QuotaMet => correctDeliveries >= quota;
 
         private void Awake()
         {
@@ -89,6 +98,7 @@ namespace Undelivered.Work
             goldGenerated += Mathf.Max(0, goldGained);
             _correctByType.TryGetValue(type, out int current);
             _correctByType[type] = current + 1;
+            UpdateQuotaUI();
         }
 
         /// <summary>Records a misclassified box and the gold it cost.</summary>
@@ -122,13 +132,49 @@ namespace Undelivered.Work
             itemsObtained++;
         }
 
+        /// <summary>Sets the day's quota (correct deliveries needed to finish) and refreshes the UI.</summary>
+        public void SetQuota(int newQuota)
+        {
+            quota = Mathf.Max(0, newQuota);
+            UpdateQuotaUI();
+        }
+
+        /// <summary>Resets all day counters for a new day (the new quota is set separately).</summary>
+        public void ResetDay()
+        {
+            goldSpent = 0;
+            goldGenerated = 0;
+            goldLost = 0;
+            correctDeliveries = 0;
+            incorrectDeliveries = 0;
+            trustLostToday = 0;
+            itemsObtained = 0;
+            _correctByType.Clear();
+            finished = false;
+
+            if (summaryWindow != null)
+            {
+                summaryWindow.SetActive(false);
+            }
+            UpdateQuotaUI();
+        }
+
+        private void UpdateQuotaUI()
+        {
+            SetText(quotaText, $"{correctDeliveries}/{quota}");
+            if (finishDayButton != null)
+            {
+                finishDayButton.interactable = QuotaMet;
+            }
+        }
+
         /// <summary>
-        /// Closes the day's counts, applies the trust gained (+1 per 10 correct of the same type),
-        /// fills the summary texts (including the net trust change) and opens the summary window.
+        /// Closes the day's counts (only if the quota is met), applies the trust gained (+1 per 10
+        /// correct of the same type), fills the summary texts and opens the summary window.
         /// </summary>
         public void FinishDay()
         {
-            if (finished)
+            if (finished || !QuotaMet)
             {
                 return;
             }

@@ -11,10 +11,17 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c4e5f6a7b8091a2b3c4d5e6f70819a2b, type: 3}
   m_Name: SelloDeCalidad
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   icon: {fileID: 0}
   upgradeName: Sello de calidad
-  description: Sella cajas a mano y entregan x1.5 oro.
-  price: 120
+  description: "Sell\xE1 cajas a mano para m\xE1s oro al entregar."
+  descriptionForTooltip: "Agrega un sello de calidad con diferente porcentaje de
+    mejora de oro. x1.5/x1.75/x2/Autom\xE1tico."
+  levelPrices: 82000000180100000802000052030000
+  valuePerLevel:
+  - 1.25
+  - 1.6
+  - 2
+  - 2.5
   feature: 2
-  weightLabelChance: 0.8
+  autoStampFlatBonus: 2

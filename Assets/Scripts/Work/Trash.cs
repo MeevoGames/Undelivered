@@ -16,11 +16,11 @@ namespace Undelivered.Work
         // "Limpieza automática" upgrade.
         public static bool AutoCleanupEnabled;
 
+        // Seconds the auto-cleanup takes to reach the bin; set per level by the upgrade (7/4/2).
+        public static float CleanupDuration = 3f;
+
         [Tooltip("Gold lost when this trash is dropped on a slot that isn't the paper bin.")]
         [SerializeField] private int wrongSlotGoldPenalty = 2;
-
-        [Tooltip("Seconds the automatic cleanup takes to carry this trash to the bin (a bit slow).")]
-        [SerializeField] private float cleanupDuration = 3f;
 
         private bool _cleaningUp;
 
@@ -63,11 +63,11 @@ namespace Undelivered.Work
             RectTransform rect = (RectTransform)transform;
             Vector3 start = rect.position;
 
-            PaperBinSlot bin = FindFirstObjectByType<PaperBinSlot>();
+            PaperBinSlot bin = FindAnyObjectByType<PaperBinSlot>();
             RectTransform binRect = bin != null ? bin.transform as RectTransform : null;
             Vector3 target = binRect != null ? binRect.TransformPoint(binRect.rect.center) : start;
 
-            float duration = Mathf.Max(0.01f, cleanupDuration);
+            float duration = Mathf.Max(0.01f, CleanupDuration);
             float elapsed = 0f;
             while (elapsed < duration)
             {

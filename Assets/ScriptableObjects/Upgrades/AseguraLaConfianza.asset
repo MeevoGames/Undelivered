@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4e5f6a7b8091a2b3c4d5e6f70819a2b, type: 3}
+  m_Name: AseguraLaConfianza
+  m_EditorClassIdentifier: 
+  icon: {fileID: 0}
+  upgradeName: Asegura la confianza
+  description: Reduce la probabilidad de perder confianza.
+  descriptionForTooltip: Reduce la probabilidad de perder confianza al abrir paquetes.
+    25/50/75/100%
+  levelPrices: 8c0000002c01000030020000b6030000
+  valuePerLevel:
+  - 0.25
+  - 0.5
+  - 0.75
+  - 1
+  feature: 5
+  autoStampFlatBonus: 2

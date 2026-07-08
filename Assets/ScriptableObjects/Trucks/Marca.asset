@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3a031c7b3dd8b349a102b2623c9d8ec, type: 3}
+  m_Name: Marca
+  m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Work.TruckData
+  descriptionForTooltip: MARCA trae 10 cajas por pedido con alta probabilidad de
+    paquetes de dados.
+  price: 310
+  stock: 4
+  totalBoxes: 10
+  averageWeight: 14
+  brokenChance: 0
+  brokenPortion: 0.5
+  boxChances:
+  - type: 0
+    percent: 90
+  - type: 1
+    percent: 3
+  - type: 2
+    percent: 4
+  - type: 3
+    percent: 3

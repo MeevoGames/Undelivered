@@ -25,6 +25,9 @@ namespace Undelivered.Items
         [SerializeField] private string cardName;
         [SerializeField, TextArea] private string description;
 
+        [Tooltip("Shown as the hover tooltip.")]
+        [SerializeField, TextArea] private string descriptionForTooltip;
+
         [Header("Night-game metadata (used later)")]
         [SerializeField] private Kind kind;
         [Tooltip("Multiplier amount (2-6) for multiplier cards; ignored for boxes / specific die.")]
@@ -33,6 +36,7 @@ namespace Undelivered.Items
         public Sprite Sprite => sprite;
         public string CardName => cardName;
         public string Description => description;
+        public string DescriptionForTooltip => descriptionForTooltip;
         public Kind CardKind => kind;
         public int Value => value;
 

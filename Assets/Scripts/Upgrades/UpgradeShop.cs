@@ -5,13 +5,13 @@ using UnityEngine;
 namespace Undelivered.Upgrades
 {
     /// <summary>
-    /// Upgrades shop (second tab of the left panel). Lists the day-mode upgrades, keeps their buy
-    /// buttons in sync with the player's gold, and on purchase spends the gold, applies the upgrade
-    /// and marks it as owned so it can't be bought again.
+    /// Upgrades shop (second tab of the left panel). The ProgressionManager configures which upgrades
+    /// are available each level; purchased levels persist across days. Tracks each upgrade's level,
+    /// keeps buy buttons in sync with gold, and on purchase spends the next level's price and applies it.
     /// </summary>
     public class UpgradeShop : MonoBehaviour
     {
-        [Tooltip("Upgrades available for sale.")]
+        [Tooltip("Upgrades for sale if no ProgressionManager configures the shop.")]
         [SerializeField] private List<UpgradeData> upgradesForSale = new List<UpgradeData>();
 
         [Tooltip("Prefab of a single shop row (must have an UpgradeShopItem).")]
@@ -21,14 +21,17 @@ namespace Undelivered.Upgrades
         [SerializeField] private Transform itemsParent;
 
         private readonly List<UpgradeShopItem> _items = new List<UpgradeShopItem>();
-        private readonly HashSet<UpgradeData> _purchased = new HashSet<UpgradeData>();
+        private readonly Dictionary<UpgradeData, int> _levels = new Dictionary<UpgradeData, int>();
         private bool _subscribed;
+        private bool _configured;
 
         private void Start()
         {
-            BuildItems();
             TrySubscribe();
-            RefreshItems();
+            if (!_configured)
+            {
+                Build(upgradesForSale);
+            }
         }
 
         private void OnEnable() => TrySubscribe();
@@ -54,7 +57,14 @@ namespace Undelivered.Upgrades
 
         private void OnGoldChanged(int gold) => RefreshItems(gold);
 
-        private void BuildItems()
+        /// <summary>Rebuilds the shop to show only the given upgrades. Purchased levels are kept across days.</summary>
+        public void Configure(List<UpgradeData> upgrades)
+        {
+            _configured = true;
+            Build(upgrades);
+        }
+
+        private void Build(List<UpgradeData> upgrades)
         {
             if (itemPrefab == null || itemsParent == null)
             {
@@ -62,7 +72,8 @@ namespace Undelivered.Upgrades
                 return;
             }
 
-            foreach (UpgradeData upgrade in upgradesForSale)
+            ClearItems();
+            foreach (UpgradeData upgrade in upgrades)
             {
                 if (upgrade == null)
                 {
@@ -72,6 +83,20 @@ namespace Undelivered.Upgrades
                 item.Setup(upgrade, this);
                 _items.Add(item);
             }
+
+            RefreshItems();
+        }
+
+        private void ClearItems()
+        {
+            for (int i = 0; i < _items.Count; i++)
+            {
+                if (_items[i] != null)
+                {
+                    Destroy(_items[i].gameObject);
+                }
+            }
+            _items.Clear();
         }
 
         private void RefreshItems()
@@ -84,31 +109,68 @@ namespace Undelivered.Upgrades
         {
             for (int i = 0; i < _items.Count; i++)
             {
-                _items[i].Refresh(_purchased.Contains(_items[i].Upgrade), gold);
+                UpgradeShopItem item = _items[i];
+                if (item == null)
+                {
+                    continue;
+                }
+
+                // Hide upgrades whose prerequisite isn't owned yet (e.g. Control de Calidad needs the
+                // reempaquetadora); they appear the moment the prerequisite is purchased.
+                bool available = IsAvailable(item.Upgrade);
+                if (item.gameObject.activeSelf != available)
+                {
+                    item.gameObject.SetActive(available);
+                }
+                if (available)
+                {
+                    item.Refresh(GetLevel(item.Upgrade), gold);
+                }
             }
         }
 
-        /// <summary>Buys an upgrade if affordable and not owned: spends gold, applies it, marks owned.</summary>
+        private bool IsAvailable(UpgradeData upgrade)
+        {
+            if (upgrade == null)
+            {
+                return false;
+            }
+            UpgradeData prerequisite = upgrade.Prerequisite;
+            return prerequisite == null || GetLevel(prerequisite) >= 1;
+        }
+
+        private int GetLevel(UpgradeData upgrade) => upgrade != null && _levels.TryGetValue(upgrade, out int level) ? level : 0;
+
+        /// <summary>Buys the next level of an upgrade if affordable and not maxed.</summary>
         public void TryBuy(UpgradeData upgrade)
         {
-            if (upgrade == null || _purchased.Contains(upgrade))
+            if (upgrade == null)
             {
                 return;
             }
 
-            int gold = StatsManager.Instance != null ? StatsManager.Instance.Gold : 0;
-            if (gold < upgrade.Price)
+            int level = GetLevel(upgrade);
+            if (level >= upgrade.MaxLevel)
             {
-                Debug.LogWarning($"No alcanza para comprar la mejora '{upgrade.UpgradeName}' (precio {upgrade.Price}, oro {gold}).");
+                return; // already maxed
+            }
+
+            int price = upgrade.GetPrice(level);
+            int gold = StatsManager.Instance != null ? StatsManager.Instance.Gold : 0;
+            if (gold < price)
+            {
+                Debug.LogWarning($"No alcanza para mejorar '{upgrade.UpgradeName}' a nivel {level + 1} (precio {price}, oro {gold}).");
                 return;
             }
 
             if (StatsManager.Instance != null)
             {
-                StatsManager.Instance.AddGold(-upgrade.Price);
+                StatsManager.Instance.AddGold(-price);
             }
-            upgrade.Apply();
-            _purchased.Add(upgrade);
+
+            int newLevel = level + 1;
+            _levels[upgrade] = newLevel;
+            upgrade.Apply(newLevel);
             RefreshItems();
         }
     }

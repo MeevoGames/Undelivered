@@ -17,6 +17,9 @@ namespace Undelivered.Work
         [Tooltip("Quality stamp element. Should start disabled.")]
         [SerializeField] private GameObject stampElement;
 
+        [Tooltip("Repackager (reempaquetadora) element. Should start disabled.")]
+        [SerializeField] private GameObject repackagerElement;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -34,6 +37,10 @@ namespace Undelivered.Work
             if (stampElement != null)
             {
                 stampElement.SetActive(false);
+            }
+            if (repackagerElement != null)
+            {
+                repackagerElement.SetActive(false);
             }
         }
 
@@ -60,6 +67,15 @@ namespace Undelivered.Work
             if (stampElement != null)
             {
                 stampElement.SetActive(true);
+            }
+        }
+
+        /// <summary>Turns the repackager element on (called by the Reempaquetado upgrade).</summary>
+        public void EnableRepackager()
+        {
+            if (repackagerElement != null)
+            {
+                repackagerElement.SetActive(true);
             }
         }
     }
