@@ -15,6 +15,9 @@ namespace Undelivered.Work
     {
         public static DayManager Instance { get; private set; }
 
+        /// <summary>Raised once when the day is finished (drives the day→night mode change).</summary>
+        public event System.Action Finished;
+
         private int goldSpent;
         private int goldGenerated;
         private int goldLost;
@@ -213,6 +216,8 @@ namespace Undelivered.Work
             {
                 summaryWindow.SetActive(true);
             }
+
+            Finished?.Invoke();
         }
 
         private static void SetText(TextMeshProUGUI text, string value)

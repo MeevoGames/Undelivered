@@ -1,0 +1,278 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Undelivered.Night
+{
+    /// <summary>
+    /// Slides the night panels in and out of the centre with a code-driven bounce (so any panel can
+    /// reuse it, and future ones too). Vertical axis, in anchoredPosition.y:
+    ///   • centre (visible) = 0, hidden = +1200 (off the top edge), with overshoots at -25 and +15.
+    ///
+    /// Opening Shop / Inventory / Gems pushes whatever is at the centre (the Combat panel) up and out
+    /// and brings the opened panel down:
+    ///   • opened panel: 1200 → -25 → 15 → 0
+    ///   • pushed panel: 0 → -25 → 1200
+    /// Closing reverses it: the panel leaves (0 → 15 → -25 → 1200) and Combat returns (1200 → -25 → 15 → 0).
+    /// </summary>
+    public class NightScreens : MonoBehaviour
+    {
+        [Header("Panels")]
+        [Tooltip("The combat tab — the base that sits at the centre; Open pushes it away, Close brings it back.")]
+        [SerializeField] private RectTransform combat;
+        [SerializeField] private RectTransform shop;
+        [SerializeField] private RectTransform inventory;
+        [SerializeField] private RectTransform gems;
+        [Tooltip("Tournament panel (its own entrance is horizontal and handled elsewhere; referenced here for completeness).")]
+        [SerializeField] private RectTransform tournament;
+
+        [Header("Bounce (anchoredPosition.y)")]
+        [SerializeField] private float centerY = 0f;
+        [SerializeField] private float hiddenY = 1200f;
+        [Tooltip("Overshoot below the centre.")]
+        [SerializeField] private float undershootY = -25f;
+        [Tooltip("Overshoot above the centre.")]
+        [SerializeField] private float overshootY = 15f;
+        [Tooltip("X the tournament panel slides to when entered (off-screen to the right).")]
+        [SerializeField] private float tournamentExitX = 2000f;
+
+        [Header("Combat start")]
+        [Tooltip("The turn space; drops in from the top with the bounce when combat starts.")]
+        [SerializeField] private RectTransform spaceTurn;
+        [Tooltip("Shop / gems / inventory buttons shown before combat; they slide off right when it starts.")]
+        [SerializeField] private RectTransform[] preCombatButtons;
+        [SerializeField] private RectTransform effectPlayer;
+        [SerializeField] private RectTransform effectWorld;
+        [Tooltip("X the combat prep panel slides to when combat starts (off-screen left).")]
+        [SerializeField] private float combatExitX = -2000f;
+        [Tooltip("X the pre-combat buttons slide to (off-screen right).")]
+        [SerializeField] private float buttonsExitX = 2000f;
+
+        [Header("Effect size bounce (px)")]
+        [SerializeField] private float sizeUndershoot = 615f;
+        [SerializeField] private float sizeOvershoot = 655f;
+        [SerializeField] private float sizeTarget = 640f;
+        [Tooltip("EffectPlayer's final anchoredPosition (anchor it to the bottom-left corner).")]
+        [SerializeField] private Vector2 effectPlayerPosition = new Vector2(30f, 30f);
+        [Tooltip("EffectWorld's final anchoredPosition (anchor it to the bottom-right corner).")]
+        [SerializeField] private Vector2 effectWorldPosition = new Vector2(-30f, 30f);
+
+        [Header("Speed")]
+        [Tooltip("Slide speed in pixels per second.")]
+        [SerializeField] private float speed = 3500f;
+        [Tooltip("Minimum duration of any single segment (seconds).")]
+        [SerializeField] private float minSegment = 0.06f;
+
+        private RectTransform _current;
+        private readonly Dictionary<RectTransform, Coroutine> _anims = new Dictionary<RectTransform, Coroutine>();
+
+        private void Awake()
+        {
+            // The tournament panel shows first; the combat tab and the overlays start hidden above.
+            SetY(shop, hiddenY);
+            SetY(inventory, hiddenY);
+            SetY(gems, hiddenY);
+            SetY(combat, hiddenY);
+            SetY(spaceTurn, hiddenY);
+            _current = tournament;
+        }
+
+        // ----- public API -----
+        public void OpenShop() => Open(shop);
+        public void CloseShop() => Close(shop);
+        public void OpenInventory() => Open(inventory);
+        public void CloseInventory() => Close(inventory);
+        public void OpenGems() => Open(gems);
+        public void CloseGems() => Close(gems);
+
+        /// <summary>Enters the tournament: the tournament panel slides off to the right and combat bounces to the centre.</summary>
+        public void OpenTournament()
+        {
+            if (_current == combat) return; // already entered
+            if (tournament != null) SlideX(tournament, tournamentExitX);
+            EnterFromTop(combat);
+            _current = combat;
+        }
+
+        /// <summary>
+        /// "Comenzar": the combat-prep panel leaves to the left, the turn space drops in with a bounce,
+        /// the pre-combat buttons leave to the right, and the effect panels bounce to size.
+        /// </summary>
+        public void StartCombat()
+        {
+            if (_current != combat) return; // only from the combat-prep view
+
+            SlideX(combat, combatExitX);          // combat prep → off-screen left
+            EnterFromTop(spaceTurn);              // turn space drops in from the top
+
+            if (preCombatButtons != null)
+            {
+                foreach (RectTransform button in preCombatButtons) SlideX(button, buttonsExitX);
+            }
+
+            SizeBounce(effectPlayer, effectPlayerPosition); // resize + move to the bottom-left
+            SizeBounce(effectWorld, effectWorldPosition);   // resize + move to the bottom-right
+
+            _current = null; // no longer on a vertical-overlay base
+        }
+
+        // ----- open / close -----
+        private void Open(RectTransform target)
+        {
+            if (target == null || target == _current) return;
+
+            EnterFromTop(target);            // 1200 → -25 → 15 → 0
+            if (_current != null) ExitPushed(_current); // 0 → -25 → 1200
+            _current = target;
+        }
+
+        private void Close(RectTransform target)
+        {
+            if (target == null) return;
+
+            ExitClose(target);               // 0 → 15 → -25 → 1200
+            if (combat != null && combat != target)
+            {
+                EnterFromTop(combat);        // 1200 → -25 → 15 → 0
+            }
+            _current = combat;
+        }
+
+        // ----- movement primitives -----
+        private void EnterFromTop(RectTransform panel)
+        {
+            if (panel == null) return;
+            StopAnim(panel);
+            SetY(panel, hiddenY);
+            Run(panel, undershootY, overshootY, centerY);
+        }
+
+        private void ExitPushed(RectTransform panel)
+        {
+            if (panel == null) return;
+            StopAnim(panel);
+            Run(panel, undershootY, hiddenY);
+        }
+
+        private void ExitClose(RectTransform panel)
+        {
+            if (panel == null) return;
+            StopAnim(panel);
+            Run(panel, overshootY, undershootY, hiddenY);
+        }
+
+        private void Run(RectTransform panel, params float[] keyframes)
+        {
+            _anims[panel] = StartCoroutine(Move(panel, keyframes));
+        }
+
+        private IEnumerator Move(RectTransform panel, float[] keyframes)
+        {
+            foreach (float targetY in keyframes)
+            {
+                Vector2 start = panel.anchoredPosition;
+                float distance = Mathf.Abs(targetY - start.y);
+                float duration = Mathf.Max(minSegment, distance / Mathf.Max(1f, speed));
+
+                for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+                {
+                    float k = Mathf.SmoothStep(0f, 1f, t / duration);
+                    panel.anchoredPosition = new Vector2(start.x, Mathf.Lerp(start.y, targetY, k));
+                    yield return null;
+                }
+                panel.anchoredPosition = new Vector2(start.x, targetY);
+            }
+            _anims[panel] = null;
+        }
+
+        // Plain horizontal slide (no bounce) — used to send the tournament off to the right.
+        private void SlideX(RectTransform panel, float targetX)
+        {
+            if (panel == null) return;
+            StopAnim(panel);
+            _anims[panel] = StartCoroutine(MoveX(panel, targetX));
+        }
+
+        private IEnumerator MoveX(RectTransform panel, float targetX)
+        {
+            Vector2 start = panel.anchoredPosition;
+            float distance = Mathf.Abs(targetX - start.x);
+            float duration = Mathf.Max(minSegment, distance / Mathf.Max(1f, speed));
+
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+            {
+                float k = Mathf.SmoothStep(0f, 1f, t / duration);
+                panel.anchoredPosition = new Vector2(Mathf.Lerp(start.x, targetX, k), start.y);
+                yield return null;
+            }
+            panel.anchoredPosition = new Vector2(targetX, start.y);
+            _anims[panel] = null;
+        }
+
+        // Bounces a panel's HEIGHT through undershoot → overshoot → target (width stays fixed), and
+        // optionally slides its anchoredPosition to moveTo over the same time.
+        private void SizeBounce(RectTransform panel, Vector2? moveTo)
+        {
+            if (panel == null) return;
+            StopAnim(panel);
+            _anims[panel] = StartCoroutine(SizeRoutine(panel, moveTo));
+        }
+
+        private IEnumerator SizeRoutine(RectTransform panel, Vector2? moveTo)
+        {
+            float[] heights = { sizeUndershoot, sizeOvershoot, sizeTarget };
+
+            Vector2 startPos = panel.anchoredPosition;
+            Vector2 endPos = moveTo ?? startPos;
+
+            // Pace each segment by how far the height travels; the position slides across the whole.
+            var durations = new float[heights.Length];
+            float total = 0f;
+            float prev = panel.sizeDelta.y;
+            for (int i = 0; i < heights.Length; i++)
+            {
+                durations[i] = Mathf.Max(minSegment, Mathf.Abs(heights[i] - prev) / Mathf.Max(1f, speed));
+                total += durations[i];
+                prev = heights[i];
+            }
+
+            float done = 0f;
+            for (int i = 0; i < heights.Length; i++)
+            {
+                float fromHeight = panel.sizeDelta.y;
+                for (float t = 0f; t < durations[i]; t += Time.unscaledDeltaTime)
+                {
+                    float h = Mathf.Lerp(fromHeight, heights[i], Mathf.SmoothStep(0f, 1f, t / durations[i]));
+                    SetHeight(panel, h);
+                    float g = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((done + t) / total));
+                    panel.anchoredPosition = Vector2.Lerp(startPos, endPos, g);
+                    yield return null;
+                }
+                SetHeight(panel, heights[i]);
+                done += durations[i];
+            }
+
+            SetHeight(panel, sizeTarget);
+            panel.anchoredPosition = endPos;
+            _anims[panel] = null;
+        }
+
+        private static void SetHeight(RectTransform panel, float height)
+        {
+            Vector2 s = panel.sizeDelta;
+            panel.sizeDelta = new Vector2(s.x, height); // width fixed, only height changes
+        }
+
+        private void StopAnim(RectTransform panel)
+        {
+            if (_anims.TryGetValue(panel, out Coroutine c) && c != null) StopCoroutine(c);
+        }
+
+        private static void SetY(RectTransform panel, float y)
+        {
+            if (panel == null) return;
+            Vector2 p = panel.anchoredPosition;
+            panel.anchoredPosition = new Vector2(p.x, y);
+        }
+    }
+}

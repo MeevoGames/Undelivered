@@ -5,19 +5,24 @@ using UnityEngine.UI;
 
 namespace Undelivered.Items
 {
-    /// <summary>UI item showing a collected gift card's icon, name and description.</summary>
+    /// <summary>
+    /// UI item for a gift card: icon, name and a quantity count (identical cards are shown as a single
+    /// accumulated entry). No description text — the hover tooltip comes from the TooltipTrigger on
+    /// this same GameObject.
+    /// </summary>
     public class GiftCardItem : MonoBehaviour
     {
         [SerializeField] private Image icon;
         [SerializeField] private TextMeshProUGUI nameText;
-        [SerializeField] private TextMeshProUGUI descriptionText;
 
-        [Tooltip("Tooltip trigger for the hover description (auto-found on this object if left empty).")]
-        [SerializeField] private TooltipTrigger tooltip;
+        [Tooltip("Quantity of this card (for accumulated duplicates).")]
+        [SerializeField] private TextMeshProUGUI countText;
 
         public GiftCardData Card { get; private set; }
 
-        public void Setup(GiftCardData card)
+        public void Setup(GiftCardData card) => Setup(card, 1);
+
+        public void Setup(GiftCardData card, int count)
         {
             Card = card;
             if (card == null)
@@ -25,27 +30,12 @@ namespace Undelivered.Items
                 return;
             }
 
-            if (icon != null)
-            {
-                icon.sprite = card.Sprite;
-            }
-            if (nameText != null)
-            {
-                nameText.text = card.CardName;
-            }
-            if (descriptionText != null)
-            {
-                descriptionText.text = card.Description;
-            }
+            if (icon != null) icon.sprite = card.Sprite;
+            if (nameText != null) nameText.text = card.CardName;
+            if (countText != null) countText.text = count.ToString();
 
-            if (tooltip == null)
-            {
-                tooltip = GetComponent<TooltipTrigger>();
-            }
-            if (tooltip != null)
-            {
-                tooltip.SetMessage(card.DescriptionForTooltip);
-            }
+            TooltipTrigger tooltip = GetComponent<TooltipTrigger>();
+            if (tooltip != null) tooltip.SetMessage(card.DescriptionForTooltip);
         }
     }
 }
