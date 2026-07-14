@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Work.TruckData
   descriptionForTooltip: NEXON es una marca fuerte, conocida internacionalmente por
     su velocidad. Trae 8 cajas.
-  price: 120
+  price: 100
   stock: 6
   totalBoxes: 8
   averageWeight: 18

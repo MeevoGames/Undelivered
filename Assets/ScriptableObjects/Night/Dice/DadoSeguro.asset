@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aaaa0000dada0000dada0000dada0002, type: 3}
+  m_Name: DadoSeguro
+  m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.DiceData
+  diceName: Dado Seguro
+  descriptionForTooltip: Nunca sorprende demasiado. Solo tiene caras de 3 y 4.
+  faces:
+  - sprite: {fileID: 21300000, guid: fd01b1847b8ed854a8ec59479031dea7, type: 3}
+    empty: 0
+    value: 3
+  - sprite: {fileID: 21300000, guid: fd01b1847b8ed854a8ec59479031dea7, type: 3}
+    empty: 0
+    value: 3
+  - sprite: {fileID: 21300000, guid: fd01b1847b8ed854a8ec59479031dea7, type: 3}
+    empty: 0
+    value: 3
+  - sprite: {fileID: 21300000, guid: 28cb5930a7a8c6145a24628ac4d0c26a, type: 3}
+    empty: 0
+    value: 4
+  - sprite: {fileID: 21300000, guid: 28cb5930a7a8c6145a24628ac4d0c26a, type: 3}
+    empty: 0
+    value: 4
+  - sprite: {fileID: 21300000, guid: 28cb5930a7a8c6145a24628ac4d0c26a, type: 3}
+    empty: 0
+    value: 4
+  icon: {fileID: 21300000, guid: e1a2530469d6b58468fcb9b0d2805462, type: 3}
+  price: 16
+  level: 1

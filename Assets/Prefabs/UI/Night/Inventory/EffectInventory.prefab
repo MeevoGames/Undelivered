@@ -164,6 +164,7 @@ GameObject:
   - component: {fileID: 2989970116067002720}
   - component: {fileID: 4413977395929373121}
   - component: {fileID: -7294674912570073339}
+  - component: {fileID: 3904200498690163996}
   m_Layer: 5
   m_Name: EffectInventory
   m_TagString: Untagged
@@ -293,6 +294,23 @@ MonoBehaviour:
   comunColor: {r: 0.62, g: 0.62, b: 0.58, a: 1}
   raraColor: {r: 0.23, g: 0.51, b: 0.96, a: 1}
   epicaColor: {r: 0.65, g: 0.33, b: 0.94, a: 1}
+--- !u!114 &3904200498690163996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7386906732625281443}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d756dd10825fbd447b498eaffd0662eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Undelivered.UI.TooltipTrigger
+  direction: 1
+  kind: 3
+  title: 
+  message: 
+  duration: 
 --- !u!1 &8598915634872587702
 GameObject:
   m_ObjectHideFlags: 0

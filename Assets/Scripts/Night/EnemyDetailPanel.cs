@@ -59,8 +59,18 @@ namespace Undelivered.Night
         public void Show(EnemySlot slot, SynergyData synergy)
         {
             if (slot == null || slot.Enemy == null) return;
-            EnemyData enemy = slot.Enemy;
+            Fill(slot.Enemy, slot.CurrentHealth, slot.CurrentShield, slot.Rarity, synergy);
+        }
 
+        /// <summary>From enemy data (a combat-prep preview): shows full health/shield at the given rarity.</summary>
+        public void Show(EnemyData enemy, EnemyRarity rarity, SynergyData synergy)
+        {
+            if (enemy == null) return;
+            Fill(enemy, enemy.HealthAt(rarity), enemy.ShieldAt(rarity), rarity, synergy);
+        }
+
+        private void Fill(EnemyData enemy, int health, int shield, EnemyRarity rarity, SynergyData synergy)
+        {
             if (enemyImage != null)
             {
                 enemyImage.sprite = enemy.Sprite;
@@ -68,10 +78,10 @@ namespace Undelivered.Night
             }
 
             SetText(nameText, enemy.EnemyName);
-            SetText(healthText, slot.CurrentHealth.ToString());
+            SetText(healthText, health.ToString());
             SetText(speedText, enemy.Speed.ToString());
-            SetText(shieldText, slot.CurrentShield.ToString());
-            SetText(rarityText, slot.Rarity.ToString());
+            SetText(shieldText, shield.ToString());
+            SetText(rarityText, rarity.ToString());
 
             SetOptional(abilityText, enemy.Ability != null ? enemy.Ability.AbilityName : null);
             SetOptional(synergyText, synergy != null ? synergy.SynergyName : null);
@@ -98,6 +108,7 @@ namespace Undelivered.Night
 
             DieView view = Instantiate(dieViewPrefab, dieSlot, false);
             view.Setup(die);
+            view.HideLuck(); // luck % only shows in the deck
         }
 
         private void BounceIn()

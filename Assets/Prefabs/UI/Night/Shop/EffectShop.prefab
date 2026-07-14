@@ -501,7 +501,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.UI.TooltipTrigger
   direction: 1
+  kind: 3
+  title: 
   message: 
+  duration: 
 --- !u!114 &8664395631022064283
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -517,6 +520,8 @@ MonoBehaviour:
   icon: {fileID: 7105963874256553196}
   border: {fileID: 6115325996017270068}
   priceText: {fileID: 7941533308714363891}
+  selectedMarker: {fileID: 0}
+  spentAlpha: 0.4
   comunColor: {r: 0.62, g: 0.62, b: 0.58, a: 1}
   raraColor: {r: 0.23, g: 0.51, b: 0.96, a: 1}
   epicaColor: {r: 0.65, g: 0.33, b: 0.94, a: 1}

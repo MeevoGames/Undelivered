@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Work.TruckData
   descriptionForTooltip: AXION es una marca de buen nivel, trae 15 cajas de envios
     principalmente nacionales.
-  price: 150
+  price: 130
   stock: 4
   totalBoxes: 15
   averageWeight: 16

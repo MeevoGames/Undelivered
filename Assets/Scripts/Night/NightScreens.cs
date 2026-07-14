@@ -65,9 +65,25 @@ namespace Undelivered.Night
 
         private RectTransform _current;
         private readonly Dictionary<RectTransform, Coroutine> _anims = new Dictionary<RectTransform, Coroutine>();
+        private readonly Dictionary<RectTransform, (Vector2 pos, Vector2 size)> _initial =
+            new Dictionary<RectTransform, (Vector2 pos, Vector2 size)>();
 
         private void Awake()
         {
+            // Remember the authored layout of every panel so we can snap back to it later.
+            CaptureInitial(combat);
+            CaptureInitial(shop);
+            CaptureInitial(inventory);
+            CaptureInitial(gems);
+            CaptureInitial(tournament);
+            CaptureInitial(spaceTurn);
+            CaptureInitial(effectPlayer);
+            CaptureInitial(effectWorld);
+            if (preCombatButtons != null)
+            {
+                foreach (RectTransform button in preCombatButtons) CaptureInitial(button);
+            }
+
             // The tournament panel shows first; the combat tab and the overlays start hidden above.
             SetY(shop, hiddenY);
             SetY(inventory, hiddenY);
@@ -75,6 +91,34 @@ namespace Undelivered.Night
             SetY(combat, hiddenY);
             SetY(spaceTurn, hiddenY);
             _current = tournament;
+        }
+
+        /// <summary>Snaps every panel back to its initial layout (used when re-entering the night mode).</summary>
+        public void ResetLayout()
+        {
+            foreach (KeyValuePair<RectTransform, Coroutine> anim in _anims)
+            {
+                if (anim.Value != null) StopCoroutine(anim.Value);
+            }
+            _anims.Clear();
+
+            foreach (KeyValuePair<RectTransform, (Vector2 pos, Vector2 size)> entry in _initial)
+            {
+                entry.Key.anchoredPosition = entry.Value.pos;
+                entry.Key.sizeDelta = entry.Value.size;
+            }
+
+            SetY(shop, hiddenY);
+            SetY(inventory, hiddenY);
+            SetY(gems, hiddenY);
+            SetY(combat, hiddenY);
+            SetY(spaceTurn, hiddenY);
+            _current = tournament;
+        }
+
+        private void CaptureInitial(RectTransform rt)
+        {
+            if (rt != null) _initial[rt] = (rt.anchoredPosition, rt.sizeDelta);
         }
 
         // ----- public API -----
@@ -92,6 +136,13 @@ namespace Undelivered.Night
             if (tournament != null) SlideX(tournament, tournamentExitX);
             EnterFromTop(combat);
             _current = combat;
+        }
+
+        /// <summary>Back to tournament selection: the tournament panel slides back to the centre, over the combat.</summary>
+        public void ReturnToTournament()
+        {
+            if (tournament != null) SlideX(tournament, 0f);
+            _current = tournament;
         }
 
         /// <summary>

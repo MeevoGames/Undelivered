@@ -1,29 +1,28 @@
 using System.Collections.Generic;
+using Undelivered.Night;
 using UnityEngine;
 
 namespace Undelivered.Items
 {
     /// <summary>
-    /// Holds the gift cards the player has collected (for the future night dice game) and lists them
-    /// in the Items panel. Opening a dice package grants a random card from the pool.
+    /// The day's "items obtained" section. Opening a dice package grants a random night item — a die,
+    /// effect or box (the same kinds sold in the night shop) — which is added to the night
+    /// <see cref="Inventory"/> and listed here. The list is cleared when returning to the day mode.
     /// </summary>
     public class ItemsManager : MonoBehaviour
     {
         public static ItemsManager Instance { get; private set; }
 
-        [Tooltip("Possible gift cards granted when opening a dice package.")]
-        [SerializeField] private List<GiftCardData> giftCardPool = new List<GiftCardData>();
+        [Header("Pools (the current night items — dice / effects / boxes)")]
+        [SerializeField] private List<DiceData> dicePool = new List<DiceData>();
+        [SerializeField] private List<EffectData> effectPool = new List<EffectData>();
+        [SerializeField] private List<BoxData> boxPool = new List<BoxData>();
 
-        [Tooltip("Prefab of a single gift-card UI item (must have a GiftCardItem).")]
-        [SerializeField] private GiftCardItem itemPrefab;
+        [Tooltip("Prefab of a single obtained-item entry (a night ItemView: icon, no price).")]
+        [SerializeField] private ItemView itemPrefab;
 
-        [Tooltip("Parent (the Items GameObject) the collected cards are listed under.")]
+        [Tooltip("Parent (the Items GameObject) the obtained items are listed under.")]
         [SerializeField] private Transform itemsParent;
-
-        private readonly List<GiftCardData> _collected = new List<GiftCardData>();
-
-        /// <summary>The cards collected so far (the night system will consume these later).</summary>
-        public IReadOnlyList<GiftCardData> Collected => _collected;
 
         private void Awake()
         {
@@ -43,34 +42,56 @@ namespace Undelivered.Items
             }
         }
 
-        /// <summary>Grants a random gift card from the pool and lists it. Returns the card, or null.</summary>
-        public GiftCardData GrantRandomGiftCard()
+        /// <summary>
+        /// Grants a random night item (die / effect / box), adds it to the night <see cref="Inventory"/>
+        /// and lists it in the Items panel. Returns the item, or null if every pool is empty.
+        /// </summary>
+        public IItem GrantRandomItem()
         {
-            if (giftCardPool == null || giftCardPool.Count == 0)
+            var categories = new List<int>();
+            if (dicePool.Count > 0) categories.Add(0);
+            if (effectPool.Count > 0) categories.Add(1);
+            if (boxPool.Count > 0) categories.Add(2);
+            if (categories.Count == 0)
             {
-                Debug.LogWarning($"{nameof(ItemsManager)} has no gift cards in the pool.", this);
+                Debug.LogWarning($"{nameof(ItemsManager)} has no dice / effects / boxes in its pools.", this);
                 return null;
             }
 
-            GiftCardData card = giftCardPool[Random.Range(0, giftCardPool.Count)];
-            AddGiftCard(card);
-            return card;
-        }
-
-        /// <summary>Adds a specific gift card to the collection and lists it in the Items panel.</summary>
-        public void AddGiftCard(GiftCardData card)
-        {
-            if (card == null)
+            IItem item = null;
+            switch (categories[Random.Range(0, categories.Count)])
             {
-                return;
+                case 0:
+                    DiceData die = dicePool[Random.Range(0, dicePool.Count)];
+                    if (Inventory.Instance != null) Inventory.Instance.AddDie(die);
+                    item = die;
+                    break;
+                case 1:
+                    EffectData effect = effectPool[Random.Range(0, effectPool.Count)];
+                    if (Inventory.Instance != null) Inventory.Instance.AddEffect(effect);
+                    item = effect;
+                    break;
+                default:
+                    BoxData box = boxPool[Random.Range(0, boxPool.Count)];
+                    if (Inventory.Instance != null) Inventory.Instance.AddBox(box);
+                    item = box;
+                    break;
             }
 
-            _collected.Add(card);
-
-            if (itemPrefab != null && itemsParent != null)
+            if (item != null && itemPrefab != null && itemsParent != null)
             {
-                GiftCardItem item = Instantiate(itemPrefab, itemsParent, false);
-                item.Setup(card);
+                Instantiate(itemPrefab, itemsParent, false).Setup(item);
+            }
+            return item;
+        }
+
+        /// <summary>Clears the obtained-items list (called when returning to the day mode). The items stay in the night Inventory.</summary>
+        public void Clear()
+        {
+            if (itemsParent == null) return;
+            for (int i = itemsParent.childCount - 1; i >= 0; i--)
+            {
+                Destroy(itemsParent.GetChild(i).gameObject);
             }
         }
     }

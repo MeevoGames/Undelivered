@@ -41,12 +41,7 @@ namespace Undelivered.Night
             if (priceText != null) priceText.text = box.Price.ToString();
 
             TooltipTrigger tooltip = GetComponent<TooltipTrigger>();
-            if (tooltip != null)
-            {
-                tooltip.SetMessage(string.IsNullOrEmpty(box.DescriptionForTooltip)
-                    ? box.BoxName
-                    : $"{box.BoxName}\n{box.DescriptionForTooltip}");
-            }
+            if (tooltip != null) tooltip.SetGeneral(box.BoxName, box.DescriptionForTooltip);
         }
 
         private Color ColorFor(BoxData.Rarity rarity)

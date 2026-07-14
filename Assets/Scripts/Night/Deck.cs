@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -45,8 +47,14 @@ namespace Undelivered.Night
         /// <summary>The dice currently in the deck.</summary>
         public IReadOnlyList<DiceData> Dice => _dice;
 
-        /// <summary>When false, taps don't throw (e.g. during the opponent's turn). Set by the combat controller.</summary>
-        public bool InputEnabled { get; set; } = true;
+        /// <summary>True while the deck has at least one die (needed to start a combat).</summary>
+        public bool HasDice => _dice.Count > 0;
+
+        /// <summary>Raised whenever the deck's dice change (rebuild).</summary>
+        public event Action Changed;
+
+        /// <summary>When false, taps don't throw (before "Comenzar" and during the opponent's turn). Set by the combat controller.</summary>
+        public bool InputEnabled { get; set; } = false;
 
         private void Awake()
         {
@@ -134,11 +142,50 @@ namespace Undelivered.Night
             if (!HasAvailableDie) RefreshDeck();
         }
 
-        /// <summary>Makes every die usable again (auto on an empty turn, or via a future refresh effect).</summary>
+        /// <summary>Makes every die usable again (auto on an empty turn, or a Renewal effect). Locked dice stay spent.</summary>
         public void RefreshDeck()
         {
             foreach (DieView view in _views)
-                if (view != null) view.SetSpent(false);
+                if (view != null && !view.Locked) view.SetSpent(false);
+        }
+
+        /// <summary>Renewal (type 7): un-spends one spent die of this kind (the die just used). Locked dice are skipped.</summary>
+        public void RenewDie(DiceData die)
+        {
+            if (die == null) return;
+            foreach (DieView view in _views)
+                if (view != null && view.Spent && !view.Locked && view.Data == die) { view.SetSpent(false); return; }
+        }
+
+        /// <summary>Counterattack (ToAll): locks one spent die of this kind so no refresh/renew brings it back this combat.</summary>
+        public void LockDie(DiceData die)
+        {
+            if (die == null) return;
+            foreach (DieView view in _views)
+                if (view != null && view.Spent && !view.Locked && view.Data == die) { view.SetLocked(true); return; }
+        }
+
+        /// <summary>Combat engine: at the start of a combat, unlock and un-spend every die (fresh deck).</summary>
+        public void StartCombat()
+        {
+            foreach (DieView view in _views)
+                if (view != null) { view.SetLocked(false); view.SetSpent(false); }
+        }
+
+        /// <summary>Updates the luck % shown on every die (type 13). <paramref name="boosted"/> tints the text when a luck effect is active.</summary>
+        public void RefreshLuck(System.Func<DiceData, int> percentFor, bool boosted)
+        {
+            if (percentFor == null) return;
+            foreach (DieView view in _views)
+                if (view != null && view.Data != null) view.SetLuck(percentFor(view.Data), boosted);
+        }
+
+        /// <summary>New night: drops equipped dice no longer owned (tournament penalties) and un-spends the rest.</summary>
+        public void ResetForNewNight()
+        {
+            if (Inventory.Instance != null)
+                _dice.RemoveAll(d => d == null || !Inventory.Instance.Dice.Contains(d));
+            Rebuild(); // fresh, un-spent views
         }
 
         // A tap throws the die (if it hasn't been used yet) and marks it spent for this deck cycle.
@@ -182,6 +229,8 @@ namespace Undelivered.Night
                 }
                 _views.Add(view);
             }
+
+            Changed?.Invoke();
         }
 
         // Centres the dice horizontally with a fixed gap between them.

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 2989970116067002720}
   - component: {fileID: 5106993351678305022}
   - component: {fileID: 2628937171311732035}
+  - component: {fileID: -2075216187488820931}
   m_Layer: 5
   m_Name: ItemBoxes
   m_TagString: Untagged
@@ -136,6 +137,23 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &-2075216187488820931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7386906732625281443}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d756dd10825fbd447b498eaffd0662eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Undelivered.UI.TooltipTrigger
+  direction: 1
+  kind: 2
+  title: 
+  message: 
+  duration: 
 --- !u!1 &8598915634872587702
 GameObject:
   m_ObjectHideFlags: 0

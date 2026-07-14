@@ -46,6 +46,75 @@ namespace Undelivered.Night
             return faces[Random.Range(0, faces.Length)];
         }
 
+        /// <summary>The 6 face sprites, in order (for tooltips).</summary>
+        public Sprite[] FaceSprites()
+        {
+            var sprites = new Sprite[FaceCount];
+            if (faces != null)
+                for (int i = 0; i < sprites.Length && i < faces.Length; i++)
+                    sprites[i] = faces[i] != null ? faces[i].Sprite : null;
+            return sprites;
+        }
+
+        /// <summary>The highest value among the faces.</summary>
+        public int MaxFaceValue
+        {
+            get
+            {
+                int max = int.MinValue;
+                if (faces != null)
+                    foreach (DiceFace f in faces)
+                        if (f != null && f.Value > max) max = f.Value;
+                return max == int.MinValue ? 0 : max;
+            }
+        }
+
+        /// <summary>Natural luck: the fraction of faces showing the highest value (e.g. 1-1-1-6-6-6 → 0.5).</summary>
+        public float BaseLuckFraction
+        {
+            get
+            {
+                if (faces == null || faces.Length == 0) return 0f;
+                int max = MaxFaceValue, maxCount = 0, total = 0;
+                foreach (DiceFace f in faces)
+                {
+                    if (f == null) continue;
+                    total++;
+                    if (f.Value == max) maxCount++;
+                }
+                return total > 0 ? (float)maxCount / total : 0f;
+            }
+        }
+
+        /// <summary>
+        /// Rolls with luck: <paramref name="luckFraction"/> is the chance of landing on the highest face.
+        /// At the natural luck it reproduces <see cref="Roll"/>; higher biases toward the max face.
+        /// </summary>
+        public DiceFace RollBiased(float luckFraction)
+        {
+            if (faces == null || faces.Length == 0) return null;
+
+            int max = MaxFaceValue, maxCount = 0, nonMaxCount = 0;
+            foreach (DiceFace f in faces)
+            {
+                if (f == null) continue;
+                if (f.Value == max) maxCount++; else nonMaxCount++;
+            }
+            if (maxCount == 0) return Roll();
+
+            bool pickMax = nonMaxCount == 0 || Random.value < luckFraction;
+            int target = Random.Range(0, pickMax ? maxCount : nonMaxCount);
+            int seen = 0;
+            foreach (DiceFace f in faces)
+            {
+                if (f == null) continue;
+                if ((f.Value == max) != pickMax) continue;
+                if (seen == target) return f;
+                seen++;
+            }
+            return Roll();
+        }
+
         private void OnValidate()
         {
             // A die always has exactly six faces.

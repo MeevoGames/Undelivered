@@ -59,6 +59,9 @@ namespace Undelivered.Night
         private int _rerolls;
         private bool _generated;
 
+        /// <summary>The box pool (used by the debug console's "give random box").</summary>
+        public IReadOnlyList<BoxData> BoxPool => boxPool;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbbb0000cccc0000cccc0000cccc0011, type: 3}
+  m_Name: Encounter-24
+  m_EditorClassIdentifier: 
+  enemies:
+  - enemy: {fileID: 11400000, guid: 5b3256f6a1f507b4eb6e03d1d87bd80c, type: 2}
+    rarity: 0
+  - enemy: {fileID: 11400000, guid: ddeea458475abb3429fd31d94472870a, type: 2}
+    rarity: 0
+  - enemy: {fileID: 11400000, guid: 8498229f0c33a2d4eb109a710e484efd, type: 2}
+    rarity: 0
+  - enemy: {fileID: 11400000, guid: eb8dbe96f8c1c3848af68b1d1ebfd794, type: 2}
+    rarity: 0

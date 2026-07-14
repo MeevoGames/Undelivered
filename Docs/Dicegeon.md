@@ -135,19 +135,33 @@ No existen dos dados necesariamente iguales. El jugador construye su colección 
 
 ## Efectos
 
-Los efectos modifican el comportamiento de los dados:
+Los efectos son items que modifican una tirada o el combate. Pueden durar **solo ese turno**,
+**varios turnos** o **todo el combate**; su momento de uso es tan importante como el efecto.
 
-- cambiar el orden de turnos
-- ganar turnos adicionales
-- duplicar / triplicar un dado
-- convertir un dado en otro
-- permitir cambiar un dado durante el combate
-- transformar ataques en curaciones
-- generar mini dados
-- alterar el resultado de una tirada
+### Tipos de efecto
 
-Pueden durar **solo ese turno**, **varios turnos** o **todo el combate**. Su momento de uso es tan
-importante como su efecto.
+1. **Afectar el número de la tirada** — sumar X al resultado, o multiplicarlo ×X.
+2. **Convertir el valor en otra stat** — por defecto la tirada es **daño**; ciertos efectos la
+   convierten en **cura / escudo / velocidad**.
+3. **Otorgar turnos** — duplicar turnos, o relanzar el mismo dado 2 veces.
+4. **Transformar números** — regla condicional sobre el resultado: se compara con `mayor/menor/igual
+   a X`; si se cumple, se convierte en `Y`. Ej: «si el resultado es menor a 3 → se convierte en 9».
+5. **Bloqueo de números** — si el resultado **del oponente** es `mayor/igual a X` → se convierte en 0.
+6. **Manipulación de turnos** — «me adelanto» (juego primero aunque no sea mi turno), o «tomo al más
+   rápido y lo mando último» en el orden de turnos.
+7. **Renovación** — renueva tu deck de **dados** o de **efectos**; o renueva un dado/efecto puntual
+   luego de usarse.
+8. **Crear nuevos dados** — tras tu tirada crea **X mini dados** con valores aleatorios (X = el
+   resultado) y los lanza; su suma va al daño. Ej: sacás 3 → 3 mini dados (`1/2/3`) que se lanzan.
+9. **Contraataque** — el dado lanzado se gasta **sin causar daño**, pero el siguiente ataque que
+   recibas se le **devuelve** al enemigo que lo lanzó.
+10. **Jugar con sangre** — perdés 1 de vida por ronda, pero al valor del dado se le **suma tu vida
+    actual** como daño al oponente.
+11. **Saltarse escudo** — el daño va **directo a la vida**, ignorando el escudo enemigo.
+12. **Degradar el dado enemigo** — por un turno, el dado del enemigo se convierte en caras `1-2-3`.
+13. **Sumar un estado al daño** — el dado lleva un estado (**Quema / Veneno / Congelamiento**); el
+    enemigo atacado recibe **el resultado del dado como marcas** de ese estado (ver Estados).
+14. **Modificación de suerte** — suma/multiplica la **suerte** actual durante un turno (ver Suerte).
 
 ### Rarezas
 
@@ -171,11 +185,36 @@ Algunos efectos generan mini dados:
 
 Esto puede iniciar **cadenas enormes de efectos**.
 
+## Estados
+
+Marcas aplicadas a un personaje que actúan con el tiempo:
+
+- **Quema** — 2 de daño por cada **turno de ese enemigo**.
+- **Veneno** — 1 de daño por cada **turno que pasa** (de cualquier personaje).
+- **Congelamiento** — reduce en **1** el resultado del dado que lanza ese enemigo.
+
+Cada **marca** de un estado **duplica** su valor. Ej: 3 marcas de quema → **6** de daño por cada turno
+de ese enemigo.
+
+## Suerte
+
+Stat **todavía no creada**. En el futuro el jugador podrá maximizarla; afectará la probabilidad de
+sacar **números altos** en una tirada. Los efectos de «modificación de suerte» (tipo 14) la
+suman/multiplican por un turno.
+
 ## Builds
 
-El objetivo del jugador es construir una estrategia. No existe una única build dominante: dados
-consistentes, dados explosivos, muchos mini dados, críticos, curación, transformación, efectos
-largos, múltiples turnos. Las builds evolucionan constantemente según la colección.
+El objetivo del jugador es construir una estrategia. No existe una única build dominante; con los
+dados, efectos y estados se busca que el jugador quiera **rejugar** probando builds como:
+
+- **Mini dados** — creación → multiplicación → modificación de resultados → estados.
+- **Control** — congelamiento → degradación de dados → manipulación de turnos.
+- **Velocidad** — convertir tiradas en velocidad → adelantarse → turnos extra → renovar dados.
+- **Sangre** — curación → vida alta → sacrificar vida → convertir vida en daño.
+- **Estados** — muchos dados pequeños → aplicar muchas marcas → acelerar turnos para disparar estados.
+- **Suerte** — bonificadores de suerte → renovación de efectos → renovación de dados → multiplicadores.
+
+Las builds evolucionan constantemente según la colección.
 
 ## Torneos
 

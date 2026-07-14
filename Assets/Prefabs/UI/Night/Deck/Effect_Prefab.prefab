@@ -186,7 +186,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.UI.TooltipTrigger
   direction: 1
+  kind: 3
+  title: 
   message: Example data
+  duration: 
 --- !u!1 &6029885059670949841
 GameObject:
   m_ObjectHideFlags: 0

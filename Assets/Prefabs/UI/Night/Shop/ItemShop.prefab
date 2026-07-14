@@ -425,7 +425,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.UI.TooltipTrigger
   direction: 1
+  kind: 2
+  title: 
   message: 
+  duration: 
 --- !u!114 &1398675467626311809
 MonoBehaviour:
   m_ObjectHideFlags: 0

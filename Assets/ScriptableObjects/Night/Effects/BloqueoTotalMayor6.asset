@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbbb0000effe0000effe0000effe0007, type: 3}
+  m_Name: BloqueoTotalMayor6
+  m_EditorClassIdentifier: 
+  effectName: Bloqueo Total Mayor a 6
+  descriptionForTooltip: Si el enemigo saca mas de 6, su resultado se convierte en
+    2. Todos los enemigos que ataquen este turno.
+  icon: {fileID: 0}
+  price: 45
+  rarity: 2
+  type: 5
+  rollOperation: 1
+  amount: 2
+  stat: 0
+  comparison: 4
+  threshold: 6
+  transformTo: 2
+  grant: 0
+  turnManip: 0
+  renewal: 0
+  miniDie: {fileID: 0}
+  degradeDie: {fileID: 0}
+  enemyScope: 0
+  shieldKind: 0
+  statusType: 0
+  counterKind: 0
+  luckRollMultiplier: 1
+  luckTurns: 1

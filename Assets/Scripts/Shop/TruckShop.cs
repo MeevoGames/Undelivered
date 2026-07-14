@@ -30,6 +30,17 @@ namespace Undelivered.Shop
         private bool _subscribed;
         private bool _configured;
 
+        /// <summary>Raised after a truck is successfully bought (the tutorial listens for this).</summary>
+        public event System.Action<TruckData> Bought;
+
+        /// <summary>The shop row for a truck, or null (used by the tutorial to blink its buy button).</summary>
+        public TruckShopItem FindItem(TruckData truck)
+        {
+            foreach (TruckShopItem item in _items)
+                if (item != null && item.Truck == truck) return item;
+            return null;
+        }
+
         private void Start()
         {
             TrySubscribe();
@@ -177,6 +188,7 @@ namespace Undelivered.Shop
             }
 
             RefreshItems();
+            Bought?.Invoke(truck);
         }
     }
 }

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aaaa0000dada0000dada0000dada0002, type: 3}
+  m_Name: DadoMiedoso
+  m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.DiceData
+  diceName: Dado Miedoso
+  descriptionForTooltip: No hay sorpresas, hay seguridad.
+  faces:
+  - sprite: {fileID: 21300000, guid: fd01b1847b8ed854a8ec59479031dea7, type: 3}
+    empty: 0
+    value: 3
+  - sprite: {fileID: 21300000, guid: fd01b1847b8ed854a8ec59479031dea7, type: 3}
+    empty: 0
+    value: 3
+  - sprite: {fileID: 21300000, guid: fd01b1847b8ed854a8ec59479031dea7, type: 3}
+    empty: 0
+    value: 3
+  - sprite: {fileID: 21300000, guid: fd01b1847b8ed854a8ec59479031dea7, type: 3}
+    empty: 0
+    value: 3
+  - sprite: {fileID: 21300000, guid: fd01b1847b8ed854a8ec59479031dea7, type: 3}
+    empty: 0
+    value: 3
+  - sprite: {fileID: 21300000, guid: fd01b1847b8ed854a8ec59479031dea7, type: 3}
+    empty: 0
+    value: 3
+  icon: {fileID: 21300000, guid: e1a2530469d6b58468fcb9b0d2805462, type: 3}
+  price: 12
+  level: 1

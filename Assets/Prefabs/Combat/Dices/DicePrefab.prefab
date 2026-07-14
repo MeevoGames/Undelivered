@@ -91,6 +91,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.DieView
   faceImage: {fileID: 2369883239308295937}
   restingFace: 0
+  spentAlpha: 0.2
+  luckText: {fileID: 0}
+  luckBoostedColor: {r: 0.345, g: 0.745, b: 0.306, a: 1}
 --- !u!114 &5099164339807736512
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -104,4 +107,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.UI.TooltipTrigger
   direction: 1
+  kind: 2
+  title: 
   message: Ejemplo de dado.
+  duration: 

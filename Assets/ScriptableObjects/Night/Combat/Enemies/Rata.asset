@@ -11,13 +11,16 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbbb0000eeee0000eeee0000eeee0010, type: 3}
   m_Name: Rata
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.EnemyData
   enemyName: Rata
-  sprite: {fileID: 0}
-  descriptionForTooltip: Rapida y fragil.
+  sprite: {fileID: 21300000, guid: cde3ca3ba8800984c9f9ae37a89228f7, type: 3}
+  descriptionForTooltip: "Peque\xF1a, fr\xE1gil y r\xE1pida; sobrevive atacando antes
+    de ser alcanzada."
   health: 8
   shield: 0
-  speed: 8
+  speed: 7
   type: 1
   ability: {fileID: 0}
-  die: {fileID: 11400000, guid: d1ceda00000000000000000000000001, type: 2}
+  die: {fileID: 11400000, guid: d1ceda00000000000000000000000010, type: 2}
+  healDropChance: 1
+  healDropAmount: 10

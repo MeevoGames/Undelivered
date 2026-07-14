@@ -15,6 +15,10 @@ namespace Undelivered.Work
         // "Centro de Distribución" upgrade: multiplies the boxes every truck brings.
         public static float BoxCountMultiplier = 1f;
 
+        // The tutorial sets this in Awake so the initial boxes drop on cue (after the intro call) instead
+        // of on Start. Awake runs before every Start, so the flag is set in time.
+        public static bool SuppressAutoSpawn;
+
         [Tooltip("Trucks the player already owns at the start of the day. The shop spawns extra trucks at runtime.")]
         [SerializeField] private List<TruckData> purchasedTrucks = new List<TruckData>();
 
@@ -36,9 +40,21 @@ namespace Undelivered.Work
         [Tooltip("Delay between consecutive boxes so they arrive in a cascade.")]
         [SerializeField] private float entranceStagger = 0.05f;
 
+        [Tooltip("Boxes delivered at the start of every day.")]
+        [SerializeField] private int initialBoxCount = 5;
+
         private void Start()
         {
-            SpawnTruck(purchasedTrucks[0], 5);
+            if (!SuppressAutoSpawn) SpawnInitialBoxes();
+        }
+
+        /// <summary>Delivers the day's initial boxes (called on day start and each time the day mode is entered).</summary>
+        public void SpawnInitialBoxes()
+        {
+            if (purchasedTrucks != null && purchasedTrucks.Count > 0 && purchasedTrucks[0] != null)
+            {
+                SpawnTruck(purchasedTrucks[0], initialBoxCount);
+            }
         }
 
         /// <summary>Spawns all the boxes of a truck; each slides in from above onto the table.</summary>

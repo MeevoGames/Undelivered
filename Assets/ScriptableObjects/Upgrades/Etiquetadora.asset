@@ -15,11 +15,12 @@ MonoBehaviour:
   icon: {fileID: 0}
   upgradeName: Etiquetadora
   description: "Agrega etiquetas de direcci\xF3n a las cajas."
-  descriptionForTooltip: "Agrega etiquetas de direcci\xF3n a un porcentaje de las
-    cajas. 33/66/100%"
-  levelPrices: 64000000dc000000c2010000
+  descriptionForTooltip: Agrega etiquetas a un porcentaje de las cajas, para saber
+    a donde enviarlas sin tener que inspeccionarlas. 33/66/100%
+  levelPrices: 0a0000001e00000046000000
   valuePerLevel:
   - 0.5
   - 0.75
   - 1
+  prerequisite: {fileID: 0}
   label: 0

@@ -14,6 +14,9 @@ namespace Undelivered.Work
     {
         public static BoxInspector Instance { get; private set; }
 
+        /// <summary>Raised whenever a box's enlarged view is opened (the tutorial waits for its box here).</summary>
+        public static event System.Action<Box> Shown;
+
         [Tooltip("The enlarged view panel. Should start disabled.")]
         [SerializeField] private GameObject view;
 
@@ -107,6 +110,8 @@ namespace Undelivered.Work
             {
                 view.SetActive(true);
             }
+
+            Shown?.Invoke(box);
         }
 
         /// <summary>Stamps the box currently shown (used by the stamp drag mechanic).</summary>

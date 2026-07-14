@@ -25,6 +25,17 @@ namespace Undelivered.Upgrades
         private bool _subscribed;
         private bool _configured;
 
+        /// <summary>Raised after an upgrade level is successfully bought (the tutorial listens for this).</summary>
+        public event System.Action<UpgradeData> Bought;
+
+        /// <summary>The shop row for an upgrade, or null (used by the tutorial to blink its buy button).</summary>
+        public UpgradeShopItem FindItem(UpgradeData upgrade)
+        {
+            foreach (UpgradeShopItem item in _items)
+                if (item != null && item.Upgrade == upgrade) return item;
+            return null;
+        }
+
         private void Start()
         {
             TrySubscribe();
@@ -141,6 +152,23 @@ namespace Undelivered.Upgrades
 
         private int GetLevel(UpgradeData upgrade) => upgrade != null && _levels.TryGetValue(upgrade, out int level) ? level : 0;
 
+        /// <summary>Debug: applies each upgrade up to its max level for free (records the level). Returns how many were touched.</summary>
+        public int DebugMaxOut(IEnumerable<UpgradeData> upgrades)
+        {
+            if (upgrades == null) return 0;
+            int count = 0;
+            foreach (UpgradeData upgrade in upgrades)
+            {
+                if (upgrade == null) continue;
+                int max = upgrade.MaxLevel;
+                for (int level = GetLevel(upgrade) + 1; level <= max; level++) upgrade.Apply(level); // 1..max, so additive effects stack correctly
+                _levels[upgrade] = max;
+                count++;
+            }
+            RefreshItems();
+            return count;
+        }
+
         /// <summary>Buys the next level of an upgrade if affordable and not maxed.</summary>
         public void TryBuy(UpgradeData upgrade)
         {
@@ -172,6 +200,7 @@ namespace Undelivered.Upgrades
             _levels[upgrade] = newLevel;
             upgrade.Apply(newLevel);
             RefreshItems();
+            Bought?.Invoke(upgrade);
         }
     }
 }

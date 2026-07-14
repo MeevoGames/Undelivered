@@ -18,6 +18,14 @@ namespace Undelivered.Work
         /// <summary>Raised once when the day is finished (drives the day→night mode change).</summary>
         public event System.Action Finished;
 
+        /// <summary>Raised on each correctly classified box (the tutorial listens for the first delivery).</summary>
+        public event System.Action<BoxType> DeliveryRegistered;
+
+        /// <summary>Raised the first time the quota is met in a day (drives the tutorial's finish step).</summary>
+        public event System.Action QuotaReached;
+
+        private bool _quotaReached;
+
         private int goldSpent;
         private int goldGenerated;
         private int goldLost;
@@ -60,6 +68,7 @@ namespace Undelivered.Work
         public int CorrectDeliveries => correctDeliveries;
         public int IncorrectDeliveries => incorrectDeliveries;
         public int ItemsObtained => itemsObtained;
+        public int Quota => quota;
         public bool QuotaMet => correctDeliveries >= quota;
 
         private void Awake()
@@ -102,6 +111,7 @@ namespace Undelivered.Work
             _correctByType.TryGetValue(type, out int current);
             _correctByType[type] = current + 1;
             UpdateQuotaUI();
+            DeliveryRegistered?.Invoke(type);
         }
 
         /// <summary>Records a misclassified box and the gold it cost.</summary>
@@ -154,6 +164,7 @@ namespace Undelivered.Work
             itemsObtained = 0;
             _correctByType.Clear();
             finished = false;
+            _quotaReached = false;
 
             if (summaryWindow != null)
             {
@@ -168,6 +179,11 @@ namespace Undelivered.Work
             if (finishDayButton != null)
             {
                 finishDayButton.interactable = QuotaMet;
+            }
+            if (QuotaMet && !_quotaReached)
+            {
+                _quotaReached = true;
+                QuotaReached?.Invoke();
             }
         }
 

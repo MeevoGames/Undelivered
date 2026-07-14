@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbbb0000cccc0000cccc0000cccc0011, type: 3}
+  m_Name: Encounter-19
+  m_EditorClassIdentifier: 
+  enemies:
+  - enemy: {fileID: 11400000, guid: ddeea458475abb3429fd31d94472870a, type: 2}
+    rarity: 0
+  - enemy: {fileID: 11400000, guid: c605147e9b5059546941d9c5791fea2b, type: 2}
+    rarity: 0
+  - enemy: {fileID: 11400000, guid: ebd373df420933946bc97736f264c1bc, type: 2}
+    rarity: 0
+  - enemy: {fileID: 11400000, guid: 63ae3c2013d2db4409c91805cc887a51, type: 2}
+    rarity: 0

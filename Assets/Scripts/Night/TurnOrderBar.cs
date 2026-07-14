@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -33,10 +34,13 @@ namespace Undelivered.Night
         [SerializeField] private float indicatorSpeed = 2500f;
         [Tooltip("Fixed vertical position of the indicator.")]
         [SerializeField] private float indicatorY = 430f;
+        [Tooltip("How much faster the indicator rushes during the extra-turn loop.")]
+        [SerializeField] private float extraTurnSpeedMultiplier = 3f;
 
         private readonly List<RectTransform> _slots = new List<RectTransform>();
-        private float _indicatorTargetX;
+        private int _currentIndex = -1; // which slot the indicator tracks (its X is recomputed live)
         private bool _hasTarget;
+        private Coroutine _loop;
 
         private void Awake()
         {
@@ -46,9 +50,13 @@ namespace Undelivered.Night
 
         private void Update()
         {
-            if (!_hasTarget || turnIndicator == null) return;
+            if (turnIndicator == null || _loop != null) return; // the extra-turn loop drives the indicator itself
+            if (!_hasTarget || _currentIndex < 0 || _currentIndex >= _slots.Count) return;
+
+            // Recompute the target every frame so the indicator glides to the slot even while a
+            // ContentSizeFitter / GridLayoutGroup is still settling the slot positions.
             Vector2 p = turnIndicator.anchoredPosition;
-            p.x = Mathf.MoveTowards(p.x, _indicatorTargetX, indicatorSpeed * Time.unscaledDeltaTime);
+            p.x = Mathf.MoveTowards(p.x, TargetXFor(_slots[_currentIndex]), indicatorSpeed * Time.unscaledDeltaTime);
             p.y = indicatorY;
             turnIndicator.anchoredPosition = p;
         }
@@ -68,22 +76,22 @@ namespace Undelivered.Night
                     participants.Add(new Participant { isPlayer = false, speed = e.enemy.Speed, sprite = e.enemy.Sprite });
                 }
             }
-            Build(participants);
+            Build(participants.OrderByDescending(p => p.speed).ToList()); // faster attacks first (left)
         }
 
-        /// <summary>Builds the bar from an explicit participant list.</summary>
+        /// <summary>Builds the bar from a participant list, shown in the exact order given (no re-sort).</summary>
         public void Build(List<Participant> participants)
         {
             if (container == null || slotPrefab == null) return;
 
             Clear();
             _slots.Clear();
+            _currentIndex = -1;
+            _hasTarget = false;
 
-            // Faster attacks first (left). Stable sort keeps input order on ties (player added first → wins ties).
-            List<Participant> ordered = participants.OrderByDescending(p => p.speed).ToList();
-            for (int i = 0; i < ordered.Count; i++)
+            for (int i = 0; i < participants.Count; i++)
             {
-                Participant p = ordered[i];
+                Participant p = participants[i];
                 TurnSlot slot = Instantiate(slotPrefab, container, false);
                 slot.Setup(i + 1, p.sprite, p.isPlayer ? playerColor : enemyColor);
                 _slots.Add((RectTransform)slot.transform);
@@ -99,35 +107,85 @@ namespace Undelivered.Night
         {
             if (index < 0 || index >= _slots.Count || turnIndicator == null) return;
 
-            _indicatorTargetX = LocalXUnder(_slots[index]);
+            _currentIndex = index;
             _hasTarget = true;
             if (snap)
             {
                 Vector2 p = turnIndicator.anchoredPosition;
-                p.x = _indicatorTargetX;
+                p.x = TargetXFor(_slots[index]);
                 p.y = indicatorY;
                 turnIndicator.anchoredPosition = p;
             }
         }
 
-        // The x of a slot's centre expressed in the indicator's own parent space.
-        private float LocalXUnder(RectTransform slot)
+        /// <summary>
+        /// Extra-turn feedback: the indicator rushes to the last slot and back to the player, as if a whole
+        /// round passed with nobody acting and it's your turn again.
+        /// </summary>
+        public void PlayExtraTurnLoop(int playerIndex)
         {
-            RectTransform indicatorParent = turnIndicator.parent as RectTransform;
-            if (indicatorParent == null) return turnIndicator.anchoredPosition.x;
+            if (turnIndicator == null || _slots.Count == 0) return;
+            if (_loop != null) StopCoroutine(_loop);
+            _loop = StartCoroutine(ExtraTurnLoop(playerIndex));
+        }
+
+        private IEnumerator ExtraTurnLoop(int playerIndex)
+        {
+            _hasTarget = false; // take over from the Update-driven movement
+            float speed = indicatorSpeed * extraTurnSpeedMultiplier;
+            int last = _slots.Count - 1;
+
+            yield return MoveIndicatorTo(TargetXFor(_slots[last]), speed);                              // rush to the last slot
+            yield return MoveIndicatorTo(TargetXFor(_slots[Mathf.Clamp(playerIndex, 0, last)]), speed);  // back to you
+
+            SetCurrentTurn(playerIndex, snap: true); // resume normal targeting on the player
+            _loop = null;
+        }
+
+        private IEnumerator MoveIndicatorTo(float x, float speed)
+        {
+            while (Mathf.Abs(turnIndicator.anchoredPosition.x - x) > 0.5f)
+            {
+                Vector2 p = turnIndicator.anchoredPosition;
+                p.x = Mathf.MoveTowards(p.x, x, speed * Time.unscaledDeltaTime);
+                p.y = indicatorY;
+                turnIndicator.anchoredPosition = p;
+                yield return null;
+            }
+        }
+
+        // The anchoredPosition.x that puts the indicator under a slot's centre — robust to the
+        // indicator's anchors/pivot and to the slot living under a different parent (e.g. the grid).
+        private float TargetXFor(RectTransform slot)
+        {
+            RectTransform parent = turnIndicator.parent as RectTransform;
+            if (parent == null || slot == null) return turnIndicator.anchoredPosition.x;
 
             Canvas canvas = GetComponentInParent<Canvas>();
             Camera cam = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+
             Vector2 screen = RectTransformUtility.WorldToScreenPoint(cam, slot.position);
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(indicatorParent, screen, cam, out Vector2 local);
-            return local.x;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, screen, cam, out Vector2 local))
+                return turnIndicator.anchoredPosition.x;
+
+            // 'local' is relative to the parent's pivot; convert it to an anchoredPosition for the
+            // indicator's anchor (so it's correct whatever the indicator is anchored to).
+            Rect pr = parent.rect;
+            float anchorMidX = (turnIndicator.anchorMin.x + turnIndicator.anchorMax.x) * 0.5f;
+            float anchorRefX = pr.x + anchorMidX * pr.width;
+            return local.x - anchorRefX;
         }
 
         private void ConfigureLayout()
         {
             if (container == null) return;
-            HorizontalLayoutGroup layout = container.GetComponent<HorizontalLayoutGroup>();
-            if (layout == null) layout = container.gameObject.AddComponent<HorizontalLayoutGroup>();
+
+            // The slots are laid out by whatever LayoutGroup the container already has (a GridLayoutGroup
+            // in the scene). Never add a second one — Unity forbids it and AddComponent would return null,
+            // which then NREs. Only add a HorizontalLayoutGroup as a fallback when there is no group at all.
+            if (container.GetComponent<LayoutGroup>() != null) return;
+
+            HorizontalLayoutGroup layout = container.gameObject.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = spacing;
             layout.childAlignment = TextAnchor.MiddleLeft;
             layout.childControlWidth = false;

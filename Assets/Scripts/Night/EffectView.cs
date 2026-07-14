@@ -43,8 +43,11 @@ namespace Undelivered.Night
         /// <summary>Activated for the next throw.</summary>
         public bool Selected { get; private set; }
 
-        /// <summary>Consumed already this combat: dimmed and untappable.</summary>
+        /// <summary>Consumed already: dimmed and untappable until it renews.</summary>
         public bool Spent { get; private set; }
+
+        /// <summary>Player turns left until this spent effect renews (0 = Común, renews only at the next combat).</summary>
+        public int Cooldown { get; set; }
 
         private void Awake()
         {
@@ -87,11 +90,7 @@ namespace Undelivered.Night
 
             TooltipTrigger tooltip = GetComponent<TooltipTrigger>();
             if (tooltip != null)
-            {
-                tooltip.SetMessage(string.IsNullOrEmpty(effect.DescriptionForTooltip)
-                    ? effect.EffectName
-                    : $"{effect.EffectName}\n{effect.DescriptionForTooltip}");
-            }
+                tooltip.SetEffect(effect.EffectName, effect.DescriptionForTooltip, effect.DurationText);
 
             SetSelected(false); // start deselected (the prefab marker may default to on)
         }

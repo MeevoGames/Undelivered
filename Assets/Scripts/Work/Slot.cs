@@ -69,7 +69,6 @@ namespace Undelivered.Work
                     ? Mathf.RoundToInt(baseReward * Box.StampRewardMultiplier) + Box.StampRewardFlat
                     : baseReward;
                 delta = reward;
-                Debug.Log($"+{reward} oro — caja {box.Type} clasificada correctamente en slot {slotType}.");
                 if (DayManager.Instance != null)
                 {
                     DayManager.Instance.RegisterCorrectDelivery(box.Type, reward);
@@ -79,7 +78,6 @@ namespace Undelivered.Work
             {
                 int penalty = Mathf.CeilToInt(baseReward / 2f);
                 delta = -penalty;
-                Debug.LogWarning($"-{penalty} oro — caja {box.Type} mal clasificada en slot {slotType}.");
                 if (DayManager.Instance != null)
                 {
                     DayManager.Instance.RegisterIncorrectDelivery(penalty);

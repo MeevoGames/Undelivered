@@ -34,9 +34,12 @@ namespace Undelivered.Night
             TooltipTrigger tooltip = GetComponent<TooltipTrigger>();
             if (tooltip != null)
             {
-                tooltip.SetMessage(string.IsNullOrEmpty(item.DescriptionForTooltip)
-                    ? item.ItemName
-                    : $"{item.ItemName}\n{item.DescriptionForTooltip}");
+                if (item is DiceData die)
+                    tooltip.SetDice(die.DiceName, die.DescriptionForTooltip, die.FaceSprites());
+                else if (item is EffectData effect)
+                    tooltip.SetEffect(effect.EffectName, effect.DescriptionForTooltip, effect.DurationText);
+                else
+                    tooltip.SetGeneral(item.ItemName, item.DescriptionForTooltip);
             }
         }
     }

@@ -29,7 +29,6 @@ namespace Undelivered.Work
                 if (value != 0 && StatsManager.Instance != null)
                 {
                     StatsManager.Instance.AddGold(-value);
-                    Debug.LogWarning($"-{value} oro — tiraste a la papelera una caja {box.Type} con valor.");
                 }
             }
 

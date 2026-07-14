@@ -6,8 +6,12 @@ namespace Undelivered.UI
     /// <summary>
     /// Shakes the transform it is attached to (a decaying random offset). Uses anchoredPosition for a
     /// RectTransform (reliable for UI) or localPosition otherwise. Trigger it statically with
-    /// <see cref="Trigger"/>. For Screen Space - Overlay UI attach it to a UI content root (an overlay
-    /// canvas itself can't be moved); for camera/world-space canvases, the camera works.
+    /// <see cref="Trigger"/>, or hold a direct reference and call <see cref="Shake"/>.
+    ///
+    /// IMPORTANT: a Screen Space - Overlay canvas ignores the camera, so shaking the Camera does nothing
+    /// for overlay UI. Attach this to a UI content root (RectTransform) that holds the visuals instead.
+    /// Several shakers can coexist (e.g. day HUD + night combat); set <see cref="registerAsGlobal"/> off
+    /// on the secondary ones and reference them directly.
     /// </summary>
     public class CameraShake : MonoBehaviour
     {
@@ -19,6 +23,9 @@ namespace Undelivered.UI
         [Tooltip("Max offset of the shake (UI units for a RectTransform, world units for a camera).")]
         [SerializeField] private float magnitude = 30f;
 
+        [Tooltip("Register as the global singleton for the static Trigger(). Turn off for a secondary shaker referenced directly.")]
+        [SerializeField] private bool registerAsGlobal = true;
+
         private RectTransform _rect;
         private Vector2 _baseAnchored;
         private Vector3 _baseLocal;
@@ -26,12 +33,7 @@ namespace Undelivered.UI
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(this);
-                return;
-            }
-            Instance = this;
+            if (registerAsGlobal && Instance == null) Instance = this;
 
             _rect = transform as RectTransform;
             if (_rect != null)
@@ -76,7 +78,7 @@ namespace Undelivered.UI
             float total = Mathf.Max(0.01f, duration);
             while (elapsed < total)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.unscaledDeltaTime;
                 float damper = 1f - Mathf.Clamp01(elapsed / total);
                 ApplyOffset(Random.insideUnitCircle * (magnitude * damper));
                 yield return null;

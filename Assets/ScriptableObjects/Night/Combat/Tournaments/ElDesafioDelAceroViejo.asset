@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbbb0000dddd0000dddd0000dddd0012, type: 3}
+  m_Name: ElDesafioDelAceroViejo
+  m_EditorClassIdentifier: 
+  tournamentName: El Desafio del Acero Viejo
+  descriptionForTooltip: "M\xE1quinas abandonadas vuelven a funcionar para defender
+    su territorio."
+  difficulty: Normal
+  combats:
+  - {fileID: 11400000, guid: 676f77838ba3b7f4c90bb8ed84a671e6, type: 2}
+  - {fileID: 11400000, guid: df496b10548a8ea4184c616556367545, type: 2}
+  - {fileID: 11400000, guid: 94569162a4b8dc648aadf413c302a9ad, type: 2}
+  - {fileID: 11400000, guid: 4211b1c5de8bd0b46b96aa655689669b, type: 2}
+  healRoomAfterCombat:
+  - 10
+  - 0
+  - 10
+  reward:
+    gold: 0
+    gems: 100
+    dice: []
+    effects:
+    - {fileID: 11400000, guid: effc0000000000000000000000000503, type: 2}
+    - {fileID: 11400000, guid: effc0000000000000000000000000502, type: 2}
+    boxes:
+    - {fileID: 0}
+  penalty:
+    gold: 0
+    gems: 50
+    diceLost: 0
+    effectsLost: 1

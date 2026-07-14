@@ -27,6 +27,9 @@ namespace Undelivered.Shop
 
         public TruckData Truck => _truck;
 
+        /// <summary>The buy button (the tutorial blinks it).</summary>
+        public Button BuyButton => buyButton;
+
         /// <summary>Binds this row to a truck and the shop that handles the purchase.</summary>
         public void Setup(TruckData truck, TruckShop shop)
         {

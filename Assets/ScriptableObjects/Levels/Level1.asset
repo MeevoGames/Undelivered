@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e2d3c4b5a6978869504a3b2c1d0e0f1, type: 3}
   m_Name: Level1
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Progression.LevelData
-  quota: 2
+  quota: 15
   truckStocks:
   - truck: {fileID: 11400000, guid: 87bc915a1d1f6c640811ce76ae088fb9, type: 2}
     stock: 2

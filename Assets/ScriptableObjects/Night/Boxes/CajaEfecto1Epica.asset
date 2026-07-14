@@ -17,5 +17,5 @@ MonoBehaviour:
   icon: {fileID: 0}
   price: 60
   content: 1
-  rarity: 2
+  rarity: 1
   drawCount: 1

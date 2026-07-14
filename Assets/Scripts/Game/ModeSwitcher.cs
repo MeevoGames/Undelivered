@@ -18,8 +18,14 @@ namespace Undelivered.Game
         [Tooltip("Trigger parameter that plays the ChangeMode animation.")]
         [SerializeField] private string changeTrigger = "Change";
 
+        /// <summary>Raised right after switching into the night (dice) mode.</summary>
+        public event System.Action EnteredNight;
+        /// <summary>Raised right after switching back into the day (packaging) mode.</summary>
+        public event System.Action EnteredDay;
+
         private bool _subscribed;
         private bool _changed;
+        private bool _isNight;
 
         private void Reset() => animator = GetComponent<Animator>();
 
@@ -64,10 +70,26 @@ namespace Undelivered.Game
                 return;
             }
             _changed = true;
+            SwitchMode();
+        }
 
+        /// <summary>Fires the Change trigger unconditionally — e.g. the "Cerrar por hoy" button (night → day).</summary>
+        public void SwitchMode()
+        {
             if (animator != null && !string.IsNullOrEmpty(changeTrigger))
             {
                 animator.SetTrigger(changeTrigger);
+            }
+
+            _isNight = !_isNight;
+            if (_isNight)
+            {
+                EnteredNight?.Invoke();
+            }
+            else
+            {
+                _changed = false; // re-arm ChangeMode so the next finished day can switch again
+                EnteredDay?.Invoke();
             }
         }
     }

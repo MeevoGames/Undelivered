@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbbb0000effe0000effe0000effe0007, type: 3}
+  m_Name: RenovarDadoUsado
+  m_EditorClassIdentifier: 
+  effectName: Renovar Dado Usado
+  descriptionForTooltip: Renueva el dado que acabas de lanzar.
+  icon: {fileID: 0}
+  price: 12
+  rarity: 0
+  type: 7
+  rollOperation: 1
+  amount: 2
+  stat: 0
+  comparison: 0
+  threshold: 3
+  transformTo: 9
+  grant: 0
+  turnManip: 0
+  renewal: 2
+  miniDie: {fileID: 0}
+  degradeDie: {fileID: 0}
+  enemyScope: 0
+  shieldKind: 0
+  statusType: 0
+  counterKind: 0
+  luckRollMultiplier: 1
+  luckTurns: 1

@@ -37,7 +37,7 @@ namespace Undelivered.Night
             Box = box;
             SetIcon(box.Icon);
             SetBorder(true, (int)box.BoxRarity);
-            SetTooltip(box.BoxName, box.DescriptionForTooltip);
+            Tooltip?.SetGeneral(box.BoxName, box.DescriptionForTooltip);
         }
 
         public void SetupDie(DiceData die, Action onClick)
@@ -46,7 +46,7 @@ namespace Undelivered.Night
             Die = die;
             SetIcon(die.Icon);
             SetBorder(false, 0);
-            SetTooltip(die.DiceName, die.DescriptionForTooltip);
+            Tooltip?.SetDice(die.DiceName, die.DescriptionForTooltip, die.FaceSprites());
         }
 
         public void SetupEffect(EffectData effect, Action onClick)
@@ -55,7 +55,7 @@ namespace Undelivered.Night
             Effect = effect;
             SetIcon(effect.Icon);
             SetBorder(true, (int)effect.EffectRarity);
-            SetTooltip(effect.EffectName, effect.DescriptionForTooltip);
+            Tooltip?.SetEffect(effect.EffectName, effect.DescriptionForTooltip, effect.DurationText);
         }
 
         public void SetSelected(bool selected)
@@ -89,11 +89,6 @@ namespace Undelivered.Night
             if (show) border.color = tier == 2 ? epicaColor : tier == 1 ? raraColor : comunColor;
         }
 
-        private void SetTooltip(string name, string description)
-        {
-            TooltipTrigger tooltip = GetComponent<TooltipTrigger>();
-            if (tooltip == null) return;
-            tooltip.SetMessage(string.IsNullOrEmpty(description) ? name : $"{name}\n{description}");
-        }
+        private TooltipTrigger Tooltip => GetComponent<TooltipTrigger>();
     }
 }

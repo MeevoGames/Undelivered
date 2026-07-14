@@ -51,6 +51,23 @@ namespace Undelivered.Progression
             ApplyLevel();
         }
 
+        /// <summary>Debug: buys every upgrade from every level up to its max (ignores gold). Returns how many.</summary>
+        public int DebugUnlockAllUpgrades()
+        {
+            if (upgradeShop == null) return 0;
+
+            List<UpgradeData> all = new List<UpgradeData>();
+            if (levels != null)
+                foreach (LevelData level in levels)
+                {
+                    if (level == null || level.availableUpgrades == null) continue;
+                    foreach (UpgradeData upgrade in level.availableUpgrades)
+                        if (upgrade != null && !all.Contains(upgrade)) all.Add(upgrade);
+                }
+
+            return upgradeShop.DebugMaxOut(all);
+        }
+
         /// <summary>Advances to the next day: clears the table, resets the day stats and applies the new level.</summary>
         public void AdvanceDay()
         {

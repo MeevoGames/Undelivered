@@ -36,7 +36,6 @@ namespace Undelivered.Work
             {
                 StatsManager.Instance.AddGold(-wrongSlotGoldPenalty);
             }
-            Debug.LogWarning($"-{wrongSlotGoldPenalty} oro — tiraste basura en un slot que no es la papelera.");
             Destroy(gameObject);
         }
 

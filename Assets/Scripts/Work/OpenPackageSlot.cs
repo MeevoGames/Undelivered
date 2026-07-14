@@ -1,4 +1,5 @@
 using Undelivered.Items;
+using Undelivered.Night;
 using Undelivered.Player;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -56,17 +57,13 @@ namespace Undelivered.Work
                 }
             }
 
-            // Reward: dice boxes give a gift card for the night game; others give random gold.
+            // Reward: dice boxes give a random night item (die / effect / box); others give random gold.
             if (box.IsDice)
             {
-                GiftCardData card = ItemsManager.Instance != null ? ItemsManager.Instance.GrantRandomGiftCard() : null;
-                if (card != null)
+                IItem item = ItemsManager.Instance != null ? ItemsManager.Instance.GrantRandomItem() : null;
+                if (item != null && DayManager.Instance != null)
                 {
-                    Debug.Log($"Obtuviste una gift-card: {card.CardName}.");
-                    if (DayManager.Instance != null)
-                    {
-                        DayManager.Instance.RegisterItemObtained();
-                    }
+                    DayManager.Instance.RegisterItemObtained();
                 }
             }
             else

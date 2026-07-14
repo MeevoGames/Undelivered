@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbbb0000effe0000effe0000effe0007, type: 3}
+  m_Name: QuemaTotal
+  m_EditorClassIdentifier: 
+  effectName: Quema Total
+  descriptionForTooltip: Al atacar, aplica tantas marcas de Quema como tu tirada
+    a TODOS los enemigos. Cada marca hace 2 de dano en el turno de ese enemigo.
+  icon: {fileID: 0}
+  price: 35
+  rarity: 2
+  type: 11
+  rollOperation: 1
+  amount: 2
+  stat: 0
+  comparison: 0
+  threshold: 3
+  transformTo: 9
+  grant: 0
+  turnManip: 0
+  renewal: 0
+  miniDie: {fileID: 0}
+  degradeDie: {fileID: 0}
+  enemyScope: 1
+  shieldKind: 0
+  statusType: 0
+  counterKind: 0
+  luckRollMultiplier: 1
+  luckTurns: 1

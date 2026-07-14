@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbbb0000dddd0000dddd0000dddd0012, type: 3}
+  m_Name: Primer Lanzamiento
+  m_EditorClassIdentifier: 
+  tournamentName: Primer Lanzamiento
+  descriptionForTooltip: Una competencia sencilla para probar tu suerte y demostrar
+    que puedes sobrevivir.
+  difficulty: Facil
+  combats:
+  - {fileID: 11400000, guid: c0bac0ba000000000000000000000101, type: 2}
+  - {fileID: 11400000, guid: 4211b1c5de8bd0b46b96aa655689669b, type: 2}
+  - {fileID: 11400000, guid: e53c55b5ad946a84983c0f26fbf3b117, type: 2}
+  healRoomAfterCombat: 0a000000000000000a000000
+  reward:
+    gold: 0
+    gems: 20
+    dice:
+    - {fileID: 11400000, guid: 62cc695185a218246bc76476f7c8f952, type: 2}
+    effects: []
+    boxes:
+    - {fileID: 0}
+  penalty:
+    gold: 0
+    gems: 10
+    diceLost: 0
+    effectsLost: 0

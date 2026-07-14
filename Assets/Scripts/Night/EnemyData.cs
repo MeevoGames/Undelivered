@@ -27,6 +27,12 @@ namespace Undelivered.Night
         [Tooltip("The die this enemy rolls on its turn.")]
         [SerializeField] private DiceData die;
 
+        [Header("Healing drop")]
+        [Tooltip("Chance (0-1) this enemy drops a healing item when it dies. 0 = never.")]
+        [SerializeField, Range(0f, 1f)] private float healDropChance;
+        [Tooltip("How much health the dropped item restores.")]
+        [SerializeField] private int healDropAmount = 5;
+
         public string EnemyName => enemyName;
         public Sprite Sprite => sprite;
         public string DescriptionForTooltip => descriptionForTooltip;
@@ -36,6 +42,8 @@ namespace Undelivered.Night
         public EnemyType Type => type;
         public EnemyAbilityData Ability => ability;
         public DiceData Die => die;
+        public float HealDropChance => healDropChance;
+        public int HealDropAmount => healDropAmount;
 
         /// <summary>Health at the given rarity.</summary>
         public int HealthAt(EnemyRarity rarity) => Mathf.RoundToInt(health * EnemyRarities.Multiplier(rarity));

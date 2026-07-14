@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Undelivered.Night
@@ -31,8 +32,8 @@ namespace Undelivered.Night
         /// <summary>The effects currently equipped.</summary>
         public IReadOnlyList<EffectData> Effects => _effects;
 
-        /// <summary>When false, effects can't be activated (e.g. during the opponent's turn). Set by the combat controller.</summary>
-        public bool InputEnabled { get; set; } = true;
+        /// <summary>When false, effects can't be activated (before "Comenzar" and during the opponent's turn). Set by the combat controller.</summary>
+        public bool InputEnabled { get; set; } = false;
 
         /// <summary>The effects activated for the next throw.</summary>
         public IEnumerable<EffectData> SelectedEffects
@@ -139,35 +140,63 @@ namespace Undelivered.Night
         }
 
         /// <summary>
-        /// Spends the activated effects on a die throw. Each becomes spent for the rest of the combat and,
-        /// by rarity, is queued for removal: Común after the combat, Rara after the tournament. Épica is
-        /// never removed and comes back next combat (via <see cref="StartCombat"/>).
+        /// Spends the activated effects on a die throw. Each becomes spent and starts a renewal cooldown by
+        /// rarity: Épica renews in 2 turns, Rara in 4, Común only at the next combat (see <see cref="TickCooldowns"/>
+        /// and <see cref="StartCombat"/>).
         /// </summary>
         public void ConsumeSelected()
         {
             foreach (EffectView view in _selected)
             {
                 if (view == null || view.Effect == null) continue;
-
                 view.SetSpent(true);
-                switch (view.Effect.EffectRarity)
-                {
-                    case EffectData.Rarity.Comun: _removeAfterCombat.Add(view.Effect); break;
-                    case EffectData.Rarity.Rara: _removeAfterTournament.Add(view.Effect); break;
-                    // Épica: kept; refreshed at the start of the next combat.
-                }
+                view.Cooldown = view.Effect.RenewalCooldown; // Épica 2, Rara 4, Común 0 (next combat)
             }
             _selected.Clear();
         }
 
-        /// <summary>Combat engine: at the start of a combat, Épica effects become available again.</summary>
-        public void StartCombat()
+        /// <summary>Combat engine: at the start of each player turn, tick spent effects' cooldowns; renew those that reach 0.</summary>
+        public void TickCooldowns()
         {
             foreach (EffectView view in _views)
             {
-                if (view != null && view.Effect != null && view.Effect.EffectRarity == EffectData.Rarity.Epica)
-                    view.SetSpent(false);
+                if (view == null || !view.Spent || view.Cooldown <= 0) continue;
+                view.Cooldown--;
+                if (view.Cooldown <= 0) view.SetSpent(false); // renewed (Épica after 2, Rara after 4)
             }
+        }
+
+        /// <summary>New night: drops equipped effects no longer owned (tournament penalties) and un-spends the rest.</summary>
+        public void ResetForNewNight()
+        {
+            if (Inventory.Instance != null)
+                _effects.RemoveAll(e => e == null || !Inventory.Instance.Effects.Contains(e));
+            _removeAfterCombat.Clear();
+            _removeAfterTournament.Clear();
+            Rebuild(); // fresh, un-spent, deselected views
+        }
+
+        /// <summary>Combat engine: at the start of a combat, every effect renews (a fresh combat, so Común comes back too).</summary>
+        public void StartCombat()
+        {
+            foreach (EffectView view in _views)
+                if (view != null) { view.SetSpent(false); view.Cooldown = 0; }
+        }
+
+        /// <summary>Renewal (type 7): makes every effect usable again (including itself, like RefreshDeck for dice).</summary>
+        public void RefreshEffects()
+        {
+            if (container == null) return;
+            foreach (EffectView view in container.GetComponentsInChildren<EffectView>(true))
+                if (view != null) { view.SetSpent(false); view.Cooldown = 0; }
+        }
+
+        /// <summary>Renewal (type 7): un-spends one spent view of this effect (the last effect used).</summary>
+        public void RenewEffect(EffectData effect)
+        {
+            if (effect == null || container == null) return;
+            foreach (EffectView view in container.GetComponentsInChildren<EffectView>(true))
+                if (view != null && view.Spent && view.Effect == effect) { view.SetSpent(false); return; }
         }
 
         /// <summary>Combat engine: after a combat, destroy the spent Común effects.</summary>

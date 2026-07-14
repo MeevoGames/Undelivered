@@ -29,6 +29,9 @@ namespace Undelivered.Upgrades
 
         public UpgradeData Upgrade { get; private set; }
 
+        /// <summary>The buy button (the tutorial blinks it).</summary>
+        public Button BuyButton => buyButton;
+
         private UpgradeShop _shop;
 
         public void Setup(UpgradeData upgrade, UpgradeShop shop)

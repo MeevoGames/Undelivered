@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbbb0000eeee0000eeee0000eeee0010, type: 3}
+  m_Name: JabaliSalvaje
+  m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.EnemyData
+  enemyName: Jabali Salvaje
+  sprite: {fileID: 21300000, guid: be6e546fe9121c544b6411b34690cbd0, type: 3}
+  descriptionForTooltip: Una bestia robusta que embiste sin medir las consecuencias.
+  health: 22
+  shield: 0
+  speed: 6
+  type: 1
+  ability: {fileID: 11400000, guid: ab111000000000000000000000000001, type: 2}
+  die: {fileID: 11400000, guid: 4a09e08f8112c9b4e8985d35ba874b88, type: 2}
+  healDropChance: 0.05
+  healDropAmount: 20
