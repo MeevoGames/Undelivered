@@ -19,7 +19,8 @@ namespace Undelivered.Night
 
         public IItem Item { get; private set; }
 
-        public void Setup(IItem item)
+        /// <summary>Fills the entry. Pass <paramref name="showPrice"/> false where nothing is being bought (a gift).</summary>
+        public void Setup(IItem item, bool showPrice = true)
         {
             Item = item;
             if (item == null) return;
@@ -29,15 +30,19 @@ namespace Undelivered.Night
                 icon.sprite = item.Icon;
                 icon.enabled = item.Icon != null;
             }
-            if (priceText != null) priceText.text = item.Price.ToString();
+            if (priceText != null)
+            {
+                priceText.gameObject.SetActive(showPrice);
+                if (showPrice) priceText.text = item.Price.ToString();
+            }
 
             TooltipTrigger tooltip = GetComponent<TooltipTrigger>();
             if (tooltip != null)
             {
                 if (item is DiceData die)
-                    tooltip.SetDice(die.DiceName, die.DescriptionForTooltip, die.FaceSprites());
+                    tooltip.SetDice(die.DiceName, die.DescriptionForTooltip, die.FaceSprites(), $"{die.BaseLuckPercent}% de Suerte.");
                 else if (item is EffectData effect)
-                    tooltip.SetEffect(effect.EffectName, effect.DescriptionForTooltip, effect.DurationText);
+                    tooltip.SetEffect(effect.EffectName, effect.DescriptionForTooltip, effect.GoldenText);
                 else
                     tooltip.SetGeneral(item.ItemName, item.DescriptionForTooltip);
             }

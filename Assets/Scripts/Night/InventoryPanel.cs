@@ -175,9 +175,8 @@ namespace Undelivered.Night
             Rebuild();
         }
 
-        private int Total() => _selectKind == InventoryItem.Kind.Die
-            ? (Deck.Instance != null ? Deck.Instance.Slots : Deck.MinSlots)
-            : (EffectDeck.Instance != null ? EffectDeck.Instance.MaxSlots : Deck.MinSlots);
+        // Dice fill the 6 deck slots; effects fill the 12-slot effect library.
+        private int Total() => _selectKind == InventoryItem.Kind.Die ? Deck.SlotCount : EffectDeck.LibrarySlots;
 
         private void UpdateCountUI()
         {

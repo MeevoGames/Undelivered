@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: AlmaErrante
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.EnemyData
   enemyName: Alma Errante
-  sprite: {fileID: 21300000, guid: 4b5f4d8b0c8f4be4696604efffc01dc1, type: 3}
+  sprite: {fileID: 21300000, guid: b6681c74eee7fe943b3be216cbe66bd2, type: 3}
   descriptionForTooltip: "Un esp\xEDritu d\xE9bil y perdido que vaga sin recordar
     c\xF3mo muri\xF3."
   health: 12

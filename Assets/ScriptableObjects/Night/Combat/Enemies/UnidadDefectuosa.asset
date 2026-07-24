@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: UnidadDefectuosa
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.EnemyData
   enemyName: Unidad Defectuosa
-  sprite: {fileID: 21300000, guid: b0112a46128b67c46b845284de869f64, type: 3}
+  sprite: {fileID: 21300000, guid: 0bf89c1f4da5656418c2b8c46fa407b0, type: 3}
   descriptionForTooltip: "Un prototipo inestable cuyos ataques oscilan entre el fallo
     y la destrucci\xF3n."
   health: 18
@@ -22,3 +22,5 @@ MonoBehaviour:
   type: 2
   ability: {fileID: 0}
   die: {fileID: 11400000, guid: 45c76ce1efa88d747876a5c1b64256f8, type: 2}
+  healDropChance: 0
+  healDropAmount: 5

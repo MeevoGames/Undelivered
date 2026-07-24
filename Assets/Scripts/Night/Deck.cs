@@ -8,21 +8,24 @@ using UnityEngine.UI;
 namespace Undelivered.Night
 {
     /// <summary>
-    /// The deck: the dice currently in use. Holds between <see cref="MinSlots"/> (2, the start) and
-    /// <see cref="MaxSlots"/> (6, via paid upgrades) dice, shown centred with a fixed gap between them.
+    /// The deck: the dice currently in use. Always holds <see cref="SlotCount"/> (6) dice — the slots are
+    /// there from the start and are never upgraded — dealt alternating between the two on-screen groups,
+    /// so each side ends up with three.
     /// </summary>
     public class Deck : MonoBehaviour
     {
-        public const int MinSlots = 2;
-        public const int MaxSlots = 6;
+        /// <summary>How many dice the deck holds. Fixed: there is no slot upgrade.</summary>
+        public const int SlotCount = 6;
 
         public static Deck Instance { get; private set; }
 
         [Tooltip("Dice in the deck at the start (for testing / a saved deck).")]
         [SerializeField] private List<DiceData> startingDice = new List<DiceData>();
 
-        [Tooltip("Container the dice are listed under (a centred HorizontalLayoutGroup is applied).")]
-        [SerializeField] private RectTransform container;
+        [Tooltip("Left group of slots — takes the 1st, 3rd and 5th die.")]
+        [SerializeField] private RectTransform leftContainer;
+        [Tooltip("Right group of slots — takes the 2nd, 4th and 6th die.")]
+        [SerializeField] private RectTransform rightContainer;
         [SerializeField] private DieView dieViewPrefab;
 
         [Tooltip("Pixels between dice.")]
@@ -31,8 +34,8 @@ namespace Undelivered.Night
         [Tooltip("Height of each die in the deck (px).")]
         [SerializeField] private float dieHeight = 130f;
 
-        [Tooltip("How many dice fit in the deck right now (2 at the start, up to 6).")]
-        [SerializeField] private int slots = MinSlots;
+        [Tooltip("The END TURN button — throws the selected die. Enabled only when it's the player's turn and a die is picked.")]
+        [SerializeField] private Button endTurnButton;
 
         [Tooltip("Interim: auto-refresh the deck when it runs out. Turn this off once the combat engine drives turns via BeginTurn().")]
         [SerializeField] private bool autoRefreshWhenEmpty = true;
@@ -40,9 +43,10 @@ namespace Undelivered.Night
 
         private readonly List<DiceData> _dice = new List<DiceData>();
         private readonly List<DieView> _views = new List<DieView>();
+        private DieView _selectedDie; // the radio-picked die, thrown on END TURN
 
-        /// <summary>How many dice fit in the deck right now.</summary>
-        public int Slots => slots;
+        /// <summary>How many dice fit in the deck — always <see cref="SlotCount"/>.</summary>
+        public int Slots => SlotCount;
 
         /// <summary>The dice currently in the deck.</summary>
         public IReadOnlyList<DiceData> Dice => _dice;
@@ -53,8 +57,19 @@ namespace Undelivered.Night
         /// <summary>Raised whenever the deck's dice change (rebuild).</summary>
         public event Action Changed;
 
-        /// <summary>When false, taps don't throw (before "Comenzar" and during the opponent's turn). Set by the combat controller.</summary>
-        public bool InputEnabled { get; set; } = false;
+        private bool _inputEnabled;
+
+        /// <summary>When false, dice can't be picked and END TURN is disabled (before "Comenzar" and during the opponent's turn).</summary>
+        public bool InputEnabled
+        {
+            get => _inputEnabled;
+            set
+            {
+                _inputEnabled = value;
+                if (!value) ClearSelection(); // leaving the player's turn drops the radio pick
+                UpdateEndTurnButton();
+            }
+        }
 
         private void Awake()
         {
@@ -65,10 +80,11 @@ namespace Undelivered.Night
             }
             Instance = this;
 
-            slots = Mathf.Clamp(slots, MinSlots, MaxSlots);
+            if (endTurnButton != null) endTurnButton.onClick.AddListener(() => ThrowSelected());
+
             foreach (DiceData die in startingDice)
             {
-                if (_dice.Count >= slots) break;
+                if (_dice.Count >= SlotCount) break;
                 if (die != null) _dice.Add(die);
             }
 
@@ -84,7 +100,7 @@ namespace Undelivered.Night
         /// <summary>Adds a die if there's a free slot. Returns false if the deck is full.</summary>
         public bool AddDie(DiceData die)
         {
-            if (die == null || _dice.Count >= slots) return false;
+            if (die == null || _dice.Count >= SlotCount) return false;
 
             _dice.Add(die);
             Rebuild();
@@ -100,7 +116,7 @@ namespace Undelivered.Night
                 foreach (DiceData die in dice)
                 {
                     if (die == null) continue;
-                    if (_dice.Count >= slots) break;
+                    if (_dice.Count >= SlotCount) break;
                     _dice.Add(die);
                 }
             }
@@ -111,15 +127,6 @@ namespace Undelivered.Night
         public void RemoveDie(DiceData die)
         {
             if (die != null && _dice.Remove(die)) Rebuild();
-        }
-
-        /// <summary>Buys one more slot (paid upgrade). Returns false if already at <see cref="MaxSlots"/>.</summary>
-        public bool UpgradeSlots()
-        {
-            if (slots >= MaxSlots) return false;
-
-            slots++;
-            return true;
         }
 
         /// <summary>True while at least one die hasn't been thrown this deck cycle.</summary>
@@ -188,16 +195,48 @@ namespace Undelivered.Night
             Rebuild(); // fresh, un-spent views
         }
 
-        // A tap throws the die (if it hasn't been used yet) and marks it spent for this deck cycle.
-        private void TryThrow(DieView view, DiceData die)
+        // A tap picks the die to throw (radio: picking one deselects the rest). Nothing is thrown until
+        // the END TURN button is pressed.
+        private void SelectDie(DieView view)
         {
-            if (view == null || view.Spent || !InputEnabled) return;
+            if (view == null || view.Spent || !_inputEnabled) return;
 
-            view.SetSpent(true);
+            foreach (DieView v in _views)
+                if (v != null) v.SetSelected(v == view);
+            _selectedDie = view;
+            UpdateEndTurnButton();
+        }
+
+        /// <summary>END TURN: throws the picked die (marking it spent). Returns false if nothing is picked.</summary>
+        public bool ThrowSelected()
+        {
+            if (_selectedDie == null || _selectedDie.Spent || !_inputEnabled) return false;
+
+            DiceData die = _selectedDie.Data;
+            _selectedDie.SetSelected(false);
+            _selectedDie.SetSpent(true);
+            _selectedDie = null;
+
+            _inputEnabled = false; // no more input until the next player turn re-enables it
+            UpdateEndTurnButton();
+
             if (DiceThrower.Instance != null) DiceThrower.Instance.Throw(die);
 
             // Until the combat engine drives turns (BeginTurn), refresh automatically when the deck empties.
             if (autoRefreshWhenEmpty && !HasAvailableDie) StartCoroutine(RefreshAfterDelay());
+            return true;
+        }
+
+        private void ClearSelection()
+        {
+            _selectedDie = null;
+            foreach (DieView v in _views)
+                if (v != null) v.SetSelected(false);
+        }
+
+        private void UpdateEndTurnButton()
+        {
+            if (endTurnButton != null) endTurnButton.interactable = _inputEnabled && _selectedDie != null;
         }
 
         private IEnumerator RefreshAfterDelay()
@@ -209,20 +248,26 @@ namespace Undelivered.Night
         /// <summary>Rebuilds the deck's die views.</summary>
         public void Rebuild()
         {
-            if (container == null || dieViewPrefab == null) return;
+            if (dieViewPrefab == null) return;
 
-            for (int i = container.childCount - 1; i >= 0; i--)
-            {
-                Destroy(container.GetChild(i).gameObject);
-            }
+            ClearContainer(leftContainer);
+            if (rightContainer != leftContainer) ClearContainer(rightContainer);
             _views.Clear();
+            _selectedDie = null; // the old views are gone
 
-            foreach (DiceData die in _dice)
+            // The dice are dealt alternating sides — left, right, left, right... — so both groups fill
+            // evenly instead of one side filling up first.
+            for (int i = 0; i < _dice.Count; i++)
             {
+                DiceData die = _dice[i];
                 if (die == null) continue;
-                DieView view = Instantiate(dieViewPrefab, container, false);
+
+                RectTransform parent = i % 2 == 0 || rightContainer == null ? leftContainer : rightContainer;
+                if (parent == null) continue;
+
+                DieView view = Instantiate(dieViewPrefab, parent, false);
                 view.Setup(die);
-                view.SetClick(() => TryThrow(view, die));
+                view.SetClick(() => SelectDie(view));
                 if (view.transform is RectTransform rect)
                 {
                     rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, dieHeight);
@@ -230,17 +275,32 @@ namespace Undelivered.Night
                 _views.Add(view);
             }
 
+            UpdateEndTurnButton();
             Changed?.Invoke();
         }
 
-        // Centres the dice horizontally with a fixed gap between them.
+        private static void ClearContainer(RectTransform parent)
+        {
+            if (parent == null) return;
+            for (int i = parent.childCount - 1; i >= 0; i--) Destroy(parent.GetChild(i).gameObject);
+        }
+
+        // Centres the dice horizontally with a fixed gap between them, in each group.
         private void ConfigureLayout()
         {
-            if (container == null) return;
+            ConfigureGroup(leftContainer);
+            if (rightContainer != leftContainer) ConfigureGroup(rightContainer);
+        }
 
-            HorizontalLayoutGroup layout = container.GetComponent<HorizontalLayoutGroup>();
-            if (layout == null) layout = container.gameObject.AddComponent<HorizontalLayoutGroup>();
+        private void ConfigureGroup(RectTransform parent)
+        {
+            if (parent == null) return;
 
+            // Respect a layout group the scene already sets up (a grid, say); never add a second one —
+            // Unity forbids it and AddComponent would return null.
+            if (parent.GetComponent<LayoutGroup>() != null) return;
+
+            HorizontalLayoutGroup layout = parent.gameObject.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = spacing;
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlWidth = false;

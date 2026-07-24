@@ -15,9 +15,6 @@ namespace Undelivered.Night
         [SerializeField] private Transform[] slotContainers = new Transform[5];
         [SerializeField] private EnemySlot enemySlotPrefab;
 
-        [Tooltip("The synergy active in this combat, if any (shown in an enemy's detail panel). Set by the combat engine.")]
-        [SerializeField] private SynergyData currentSynergy;
-
         [Header("Bounce-in (arriving for the next combat)")]
         [Tooltip("How far to the right (off-screen) the enemies start before sliding into their slots.")]
         [SerializeField] private float bounceFromX = 1600f;
@@ -35,9 +32,6 @@ namespace Undelivered.Night
         private EnemySlot[] _slots;
         private float[] _homeX; // each slot's resting X (bounce offsets are relative to this)
         private RectTransform _fountain;
-
-        /// <summary>The combat engine sets the active synergy so enemy detail panels can show it.</summary>
-        public void SetSynergy(SynergyData synergy) => currentSynergy = synergy;
 
         /// <summary>
         /// Instantiates a slot per enemy, filling the **last** positions: N enemies occupy the last N
@@ -67,7 +61,7 @@ namespace Undelivered.Night
 
                 EnemySlot slot = Instantiate(enemySlotPrefab, container, false);
                 slot.Setup(entry.enemy, entry.rarity);
-                slot.SetClick(() => EnemyDetailPanel.Instance?.Show(slot, currentSynergy));
+                slot.SetClick(() => CombatController.Instance?.ShowEnemyDetail(slot)); // lists all its synergies
                 _slots[i] = slot;
                 _homeX[i] = slot.transform is RectTransform rt ? rt.anchoredPosition.x : 0f;
             }

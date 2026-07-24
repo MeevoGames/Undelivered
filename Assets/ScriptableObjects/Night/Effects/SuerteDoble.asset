@@ -15,9 +15,9 @@ MonoBehaviour:
   effectName: Suerte Doble
   descriptionForTooltip: Suma el doble de tu tirada a tu suerte (todos los dados)
     durante 2 turnos.
-  icon: {fileID: 0}
-  price: 40
-  rarity: 2
+  icon: {fileID: 21300000, guid: b96d58d223bf5284192873c41ea3d722, type: 3}
+  price: 160
+  golden: 1
   type: 13
   rollOperation: 1
   amount: 2

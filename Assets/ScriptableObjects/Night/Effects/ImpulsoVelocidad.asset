@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   effectName: Impulso de Velocidad
   descriptionForTooltip: +2 de velocidad durante todo el combate.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b96d58d223bf5284192873c41ea3d722, type: 3}
   price: 45
-  rarity: 2
+  golden: 0
   type: 6
   rollOperation: 1
   amount: 2

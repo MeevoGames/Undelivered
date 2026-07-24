@@ -1,4 +1,5 @@
 using TMPro;
+using Undelivered.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,9 +15,19 @@ namespace Undelivered.Night
         [SerializeField] private Image icon;
         [Tooltip("The mark count shown next to the icon.")]
         [SerializeField] private TextMeshProUGUI countText;
+        [Tooltip("Optional hover tooltip (auto-found on this object). The state's name + description are set here.")]
+        [SerializeField] private TooltipTrigger tooltip;
 
-        /// <summary>Sets the icon sprite and the mark count.</summary>
-        public void Set(Sprite sprite, int count)
+        private void Awake()
+        {
+            if (tooltip == null) tooltip = GetComponent<TooltipTrigger>();
+        }
+
+        /// <summary>
+        /// Sets the icon sprite, the mark count and, on the shared prefab, the state's name and description
+        /// (the prefab carries the tooltip but not the text — every state uses the same prefab).
+        /// </summary>
+        public void Set(Sprite sprite, int count, string stateName = null, string description = null)
         {
             if (icon != null)
             {
@@ -24,6 +35,9 @@ namespace Undelivered.Night
                 icon.enabled = sprite != null;
             }
             if (countText != null) countText.text = count.ToString();
+            if (tooltip == null) tooltip = GetComponent<TooltipTrigger>();
+            if (tooltip != null && (stateName != null || description != null))
+                tooltip.SetGeneral(stateName, description);
         }
     }
 }

@@ -19,14 +19,14 @@ namespace Undelivered.Night
             public bool isPlayer;
             public int speed;
             public Sprite sprite;
+            [Tooltip("Opens this combatant's detail window when its slot is tapped (optional).")]
+            public System.Action onSelected;
         }
 
         [Header("Slots")]
         [SerializeField] private RectTransform container;
         [SerializeField] private TurnSlot slotPrefab;
         [SerializeField] private float spacing = 20f;
-        [SerializeField] private Color playerColor = new Color(0.25f, 0.75f, 0.68f);
-        [SerializeField] private Color enemyColor = new Color(0.79f, 0.31f, 0.30f);
 
         [Header("Current-turn indicator")]
         [Tooltip("The gray bar that sits under the current slot (a sibling of the slots, not a child).")]
@@ -93,7 +93,8 @@ namespace Undelivered.Night
             {
                 Participant p = participants[i];
                 TurnSlot slot = Instantiate(slotPrefab, container, false);
-                slot.Setup(i + 1, p.sprite, p.isPlayer ? playerColor : enemyColor);
+                slot.Setup(i + 1, p.sprite, p.isPlayer); // the slot picks its own background sprite
+                slot.SetClick(p.onSelected);             // tapping it opens that combatant's detail
                 _slots.Add((RectTransform)slot.transform);
             }
 

@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   effectName: Convertir en Escudo
   descriptionForTooltip: El resultado de la tirada da escudo al jugador.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b96d58d223bf5284192873c41ea3d722, type: 3}
   price: 20
-  rarity: 1
+  golden: 0
   type: 2
   rollOperation: 1
   amount: 2
@@ -25,3 +25,13 @@ MonoBehaviour:
   threshold: 3
   transformTo: 9
   grant: 0
+  turnManip: 0
+  renewal: 0
+  miniDie: {fileID: 0}
+  degradeDie: {fileID: 0}
+  enemyScope: 0
+  shieldKind: 0
+  statusType: 0
+  counterKind: 0
+  luckRollMultiplier: 1
+  luckTurns: 1

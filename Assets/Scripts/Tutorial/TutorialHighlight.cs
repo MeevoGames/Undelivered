@@ -21,6 +21,31 @@ namespace Undelivered.Tutorial
         private Coroutine _loop;
         private float _baseAlpha = 1f;
 
+        /// <summary>Starts blinking a target (adds the component if it has none).</summary>
+        public static void Blink(GameObject go)
+        {
+            if (go == null) return;
+            TutorialHighlight h = go.GetComponent<TutorialHighlight>();
+            if (h == null) h = go.AddComponent<TutorialHighlight>();
+            h.Play();
+        }
+
+        /// <summary>Stops blinking a target (if it is blinking).</summary>
+        public static void StopBlink(GameObject go)
+        {
+            if (go == null) return;
+            TutorialHighlight h = go.GetComponent<TutorialHighlight>();
+            if (h != null) h.Stop();
+        }
+
+        /// <summary>Stops every blink in the scene (used when a tutorial is skipped).</summary>
+        public static void StopAll()
+        {
+            // Inactive ones have already stopped themselves in OnDisable, so the active set is enough.
+            foreach (TutorialHighlight h in FindObjectsByType<TutorialHighlight>())
+                if (h != null) h.Stop();
+        }
+
         private void Awake()
         {
             _group = GetComponent<CanvasGroup>();

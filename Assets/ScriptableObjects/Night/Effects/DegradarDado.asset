@@ -15,9 +15,9 @@ MonoBehaviour:
   effectName: Degradar Dado
   descriptionForTooltip: Por un turno, el dado del enemigo mas proximo se vuelve
     basico (1-1-2-2-3-3).
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b96d58d223bf5284192873c41ea3d722, type: 3}
   price: 15
-  rarity: 0
+  golden: 0
   type: 9
   rollOperation: 1
   amount: 2

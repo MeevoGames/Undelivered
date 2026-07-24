@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GolemDePiedra
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.EnemyData
   enemyName: Golem de Piedra
-  sprite: {fileID: 21300000, guid: ecedba67e523d2a448999ef0cae39989, type: 3}
+  sprite: {fileID: 21300000, guid: b38282eef34584b46b53e10484207a02, type: 3}
   descriptionForTooltip: "Lento pero resistente; una masa de roca dif\xEDcil de demoler."
   health: 45
   shield: 20

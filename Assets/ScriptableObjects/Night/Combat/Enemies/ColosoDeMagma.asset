@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ColosoDeMagma
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.EnemyData
   enemyName: Coloso de Magma
-  sprite: {fileID: 21300000, guid: d7fd1e91a9570a841bffa989c46e4330, type: 3}
+  sprite: {fileID: 21300000, guid: b2a86b1afd997eb4e9abba4c039b86c5, type: 3}
   descriptionForTooltip: "Una monta\xF1a viviente de roca fundida. Casi inm\xF3vil,
     pero catastr\xF3fica al atacar."
   health: 55
@@ -22,3 +22,5 @@ MonoBehaviour:
   type: 4
   ability: {fileID: 0}
   die: {fileID: 11400000, guid: 4a09e08f8112c9b4e8985d35ba874b88, type: 2}
+  healDropChance: 0
+  healDropAmount: 5

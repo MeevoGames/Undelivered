@@ -20,6 +20,12 @@ namespace Undelivered.Night
         [SerializeField] private int restingFace;
         [SerializeField, Range(0f, 1f)] private float spentAlpha = 0.2f;
 
+        [Tooltip("Shown while this die is the one selected to throw (activated on select).")]
+        [SerializeField] private GameObject selectedMarker;
+
+        [Tooltip("Deck-only decorations: visible in the deck, hidden once the die is thrown onto the table.")]
+        [SerializeField] private GameObject[] deckOnlyObjects;
+
         [Tooltip("Optional: shows this die's luck % (chance of its highest face).")]
         [SerializeField] private TextMeshProUGUI luckText;
         [Tooltip("Colour of the luck text while a luck effect is boosting it (#58BE4E).")]
@@ -37,7 +43,16 @@ namespace Undelivered.Night
         /// <summary>Locked spent for the whole combat: refresh/renew can't bring it back (a Counterattack cost).</summary>
         public bool Locked { get; private set; }
 
+        /// <summary>The radio-selected die queued to throw on END TURN.</summary>
+        public bool Selected { get; private set; }
+
         public void SetLocked(bool locked) => Locked = locked;
+
+        public void SetSelected(bool selected)
+        {
+            Selected = selected;
+            if (selectedMarker != null) selectedMarker.SetActive(selected);
+        }
 
         private void Awake()
         {
@@ -62,6 +77,9 @@ namespace Undelivered.Night
         /// <summary>Shows this die's luck as a percentage (deck only); <paramref name="boosted"/> tints it (#58BE4E) while a luck effect is active.</summary>
         public void SetLuck(int percent, bool boosted)
         {
+            // Keep the tooltip's luck line in sync with the live value (it changes with luck effects).
+            GetComponent<TooltipTrigger>()?.SetDiceLuck($"{percent}% de Suerte.");
+
             if (luckText == null) return;
             luckText.gameObject.SetActive(true);
             luckText.text = percent + "%";
@@ -74,6 +92,14 @@ namespace Undelivered.Night
             if (luckText != null) luckText.gameObject.SetActive(false);
         }
 
+        /// <summary>Hides the deck-only decorations — for dice shown outside the deck (thrown, detail, level-up).</summary>
+        public void HideDeckOnly()
+        {
+            if (deckOnlyObjects == null) return;
+            foreach (GameObject go in deckOnlyObjects)
+                if (go != null) go.SetActive(false);
+        }
+
         public void Setup(DiceData die)
         {
             Data = die;
@@ -82,7 +108,7 @@ namespace Undelivered.Night
             ShowFace(FaceAt(restingFace));
 
             TooltipTrigger tooltip = GetComponent<TooltipTrigger>();
-            if (tooltip != null) tooltip.SetDice(die.DiceName, die.DescriptionForTooltip, die.FaceSprites());
+            if (tooltip != null) tooltip.SetDice(die.DiceName, die.DescriptionForTooltip, die.FaceSprites(), $"{die.BaseLuckPercent}% de Suerte.");
         }
 
         /// <summary>Shows a specific face on the image (used at rest and while rolling).</summary>

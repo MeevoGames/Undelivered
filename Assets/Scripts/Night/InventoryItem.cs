@@ -21,10 +21,13 @@ namespace Undelivered.Night
         [SerializeField] private GameObject selectedMarker;
         [SerializeField] private Button button;
 
-        [Header("Rarity border colours")]
+        [Header("Box rarity border colours")]
         [SerializeField] private Color comunColor = new Color(0.62f, 0.62f, 0.58f);
         [SerializeField] private Color raraColor = new Color(0.23f, 0.51f, 0.96f);
         [SerializeField] private Color epicaColor = new Color(0.65f, 0.33f, 0.94f);
+
+        [Tooltip("Border of a golden effect (a bigger-scale version of another one).")]
+        [SerializeField] private Color goldenColor = new Color(0.96f, 0.76f, 0.23f);
 
         public Kind ItemKind { get; private set; }
         public BoxData Box { get; private set; }
@@ -46,7 +49,7 @@ namespace Undelivered.Night
             Die = die;
             SetIcon(die.Icon);
             SetBorder(false, 0);
-            Tooltip?.SetDice(die.DiceName, die.DescriptionForTooltip, die.FaceSprites());
+            Tooltip?.SetDice(die.DiceName, die.DescriptionForTooltip, die.FaceSprites(), $"{die.BaseLuckPercent}% de Suerte.");
         }
 
         public void SetupEffect(EffectData effect, Action onClick)
@@ -54,8 +57,8 @@ namespace Undelivered.Night
             Begin(Kind.Effect, onClick);
             Effect = effect;
             SetIcon(effect.Icon);
-            SetBorder(true, (int)effect.EffectRarity);
-            Tooltip?.SetEffect(effect.EffectName, effect.DescriptionForTooltip, effect.DurationText);
+            SetEffectBorder(effect.IsGolden);
+            Tooltip?.SetEffect(effect.EffectName, effect.DescriptionForTooltip, effect.GoldenText);
         }
 
         public void SetSelected(bool selected)
@@ -82,11 +85,20 @@ namespace Undelivered.Night
             icon.enabled = sprite != null;
         }
 
+        // Boxes still have rarities, so their border keeps the three tiers.
         private void SetBorder(bool show, int tier)
         {
             if (border == null) return;
             border.enabled = show;
             if (show) border.color = tier == 2 ? epicaColor : tier == 1 ? raraColor : comunColor;
+        }
+
+        // Effects have no rarity — only whether they're golden.
+        private void SetEffectBorder(bool golden)
+        {
+            if (border == null) return;
+            border.enabled = true;
+            border.color = golden ? goldenColor : comunColor;
         }
 
         private TooltipTrigger Tooltip => GetComponent<TooltipTrigger>();

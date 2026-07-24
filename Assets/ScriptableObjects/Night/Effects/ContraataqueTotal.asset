@@ -15,9 +15,9 @@ MonoBehaviour:
   effectName: Contraataque Total
   descriptionForTooltip: Tu dado se gasta sin poder renovarse este combate. El dano
     del siguiente enemigo se aplica a TODOS los enemigos y no a ti.
-  icon: {fileID: 0}
-  price: 40
-  rarity: 2
+  icon: {fileID: 21300000, guid: b96d58d223bf5284192873c41ea3d722, type: 3}
+  price: 160
+  golden: 1
   type: 12
   rollOperation: 1
   amount: 2

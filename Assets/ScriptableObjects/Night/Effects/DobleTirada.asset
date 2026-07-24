@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: DobleTirada
   m_EditorClassIdentifier: 
   effectName: Doble Tirada
-  descriptionForTooltip: Se lanza un segundo dado que cae en el mismo numero; duplica el resultado.
-  icon: {fileID: 0}
+  descriptionForTooltip: Se lanza un segundo dado que cae en el mismo numero; duplica
+    el resultado.
+  icon: {fileID: 21300000, guid: b96d58d223bf5284192873c41ea3d722, type: 3}
   price: 20
-  rarity: 1
+  golden: 0
   type: 4
   rollOperation: 1
   amount: 2
@@ -25,3 +26,13 @@ MonoBehaviour:
   threshold: 3
   transformTo: 9
   grant: 2
+  turnManip: 0
+  renewal: 0
+  miniDie: {fileID: 0}
+  degradeDie: {fileID: 0}
+  enemyScope: 0
+  shieldKind: 0
+  statusType: 0
+  counterKind: 0
+  luckRollMultiplier: 1
+  luckTurns: 1

@@ -15,9 +15,9 @@ MonoBehaviour:
   effectName: Romper Escudo
   descriptionForTooltip: No causa dano, pero destruye todo el escudo del enemigo
     mas cercano.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b96d58d223bf5284192873c41ea3d722, type: 3}
   price: 20
-  rarity: 0
+  golden: 0
   type: 10
   rollOperation: 1
   amount: 2

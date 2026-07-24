@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Rata
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.EnemyData
   enemyName: Rata
-  sprite: {fileID: 21300000, guid: cde3ca3ba8800984c9f9ae37a89228f7, type: 3}
+  sprite: {fileID: 21300000, guid: 0bf89c1f4da5656418c2b8c46fa407b0, type: 3}
   descriptionForTooltip: "Peque\xF1a, fr\xE1gil y r\xE1pida; sobrevive atacando antes
     de ser alcanzada."
   health: 8

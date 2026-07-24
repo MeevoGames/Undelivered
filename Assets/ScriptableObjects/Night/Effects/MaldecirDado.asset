@@ -15,9 +15,9 @@ MonoBehaviour:
   effectName: Maldecir Dado
   descriptionForTooltip: Por un turno, el dado del enemigo mas proximo pasa a 0-0-0-0-0-9
     (casi siempre 0).
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b96d58d223bf5284192873c41ea3d722, type: 3}
   price: 25
-  rarity: 1
+  golden: 0
   type: 9
   rollOperation: 1
   amount: 2

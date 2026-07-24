@@ -11,12 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbbb0000effe0000effe0000effe0007, type: 3}
   m_Name: Quema
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   effectName: Quema
-  descriptionForTooltip: Al atacar, aplica tantas marcas de Quema como tu tirada al enemigo mas cercano. Cada marca hace 2 de dano en el turno de ese enemigo.
-  icon: {fileID: 0}
+  descriptionForTooltip: Al atacar, aplica tantas marcas de Quema como tu tirada
+    al enemigo mas cercano. Cada marca hace 2 de dano en el turno de ese enemigo.
+  icon: {fileID: 21300000, guid: b96d58d223bf5284192873c41ea3d722, type: 3}
   price: 15
-  rarity: 0
+  golden: 0
   type: 11
   rollOperation: 1
   amount: 2
@@ -32,3 +33,6 @@ MonoBehaviour:
   enemyScope: 0
   shieldKind: 0
   statusType: 0
+  counterKind: 0
+  luckRollMultiplier: 1
+  luckTurns: 1

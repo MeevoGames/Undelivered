@@ -89,7 +89,7 @@ namespace Undelivered.Upgrades
             }
             if (buyButton != null)
             {
-                buyButton.interactable = !maxed && gold >= nextPrice;
+                buyButton.interactable = !maxed && gold >= nextPrice && !UpgradeShop.PurchasesLocked;
             }
             if (maxedIndicator != null)
             {

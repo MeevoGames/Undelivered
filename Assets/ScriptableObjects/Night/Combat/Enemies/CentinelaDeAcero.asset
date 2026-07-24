@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: CentinelaDeAcero
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.EnemyData
   enemyName: Centinela de Acero
-  sprite: {fileID: 21300000, guid: 8fb99a4aba1d97a4a8813e2e225d5319, type: 3}
+  sprite: {fileID: 21300000, guid: 0bf89c1f4da5656418c2b8c46fa407b0, type: 3}
   descriptionForTooltip: "Construido para resistir. Avanza lentamente detr\xE1s de
     una gruesa coraza."
   health: 28
@@ -22,3 +22,5 @@ MonoBehaviour:
   type: 2
   ability: {fileID: 0}
   die: {fileID: 11400000, guid: f727222f294d3144286afbc5a95f7801, type: 2}
+  healDropChance: 0
+  healDropAmount: 5

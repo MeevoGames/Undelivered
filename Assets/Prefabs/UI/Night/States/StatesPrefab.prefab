@@ -92,6 +92,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.StatusIcon
   icon: {fileID: 6566668806473528874}
   countText: {fileID: 8812765681989569325}
+  tooltip: {fileID: -4659298472256482602}
 --- !u!114 &-4659298472256482602
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -143,8 +144,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 14, y: -13}
-  m_SizeDelta: {x: 0, y: -6}
+  m_AnchoredPosition: {x: 14, y: -17}
+  m_SizeDelta: {x: 0, y: -14}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8077466854221396291
 CanvasRenderer:
@@ -176,8 +177,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 4
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: eeeffb88413a6d9438680bc6898b7a2e, type: 2}
+  m_sharedMaterial: {fileID: 8566100308166381518, guid: eeeffb88413a6d9438680bc6898b7a2e, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

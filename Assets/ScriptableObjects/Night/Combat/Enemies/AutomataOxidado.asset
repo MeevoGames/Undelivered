@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: AutomataOxidado
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.EnemyData
   enemyName: Automata Oxidado
-  sprite: {fileID: 21300000, guid: 7a2298890b1b5284a80f9a36ff8700a8, type: 3}
+  sprite: {fileID: 21300000, guid: 0bf89c1f4da5656418c2b8c46fa407b0, type: 3}
   descriptionForTooltip: "Una m\xE1quina antigua y deteriorada que a\xFAn cumple
     su \xFAltima orden."
   health: 20
@@ -22,3 +22,5 @@ MonoBehaviour:
   type: 2
   ability: {fileID: 0}
   die: {fileID: 11400000, guid: 4e0fa165b9036304e8de8a2f39ce6165, type: 2}
+  healDropChance: 0
+  healDropAmount: 5

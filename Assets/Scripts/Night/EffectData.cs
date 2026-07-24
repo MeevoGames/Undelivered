@@ -10,8 +10,6 @@ namespace Undelivered.Night
     [CreateAssetMenu(fileName = "Effect", menuName = "Undelivered/Night/Effect")]
     public class EffectData : ScriptableObject, IItem
     {
-        public enum Rarity { Comun, Rara, Epica }
-
         /// <summary>What the effect does. Types 1-13 are built; the rest come later.</summary>
         public enum EffectType { None, RollModifier, StatConverter, NumberTransform, GrantTurn, NumberBlock, TurnManip, Renewal, MiniDice, DegradeEnemyDie, ShieldManip, AddState, Counterattack, AddLuck }
 
@@ -50,7 +48,9 @@ namespace Undelivered.Night
         [SerializeField] private Sprite icon;
         [Tooltip("Price in gems.")]
         [SerializeField] private int price = 10;
-        [SerializeField] private Rarity rarity;
+        [Tooltip("A golden effect: does what another one does but at a much bigger scale (Quema → Quema Total). " +
+                 "They are scarce and much more expensive, and show a golden border.")]
+        [SerializeField] private bool golden;
 
         [Header("Behaviour")]
         [SerializeField] private EffectType type = EffectType.None;
@@ -108,41 +108,14 @@ namespace Undelivered.Night
 
         public string EffectName => effectName;
 
-        /// <summary>
-        /// Turns until a used effect renews, by rarity: Épica every 2, Rara every 4. Común doesn't renew
-        /// mid-combat — 0 means it stays spent until the next combat.
-        /// </summary>
-        public int RenewalCooldown
-        {
-            get
-            {
-                switch (rarity)
-                {
-                    case Rarity.Epica: return 2;
-                    case Rarity.Rara: return 4;
-                    default: return 0; // Común
-                }
-            }
-        }
+        /// <summary>True for a golden effect — a bigger-scale version of another one.</summary>
+        public bool IsGolden => golden;
 
-        /// <summary>How the effect renews, by rarity (for the tooltip).</summary>
-        public string DurationText
-        {
-            get
-            {
-                switch (rarity)
-                {
-                    case Rarity.Comun: return "Se renueva en el siguiente combate";
-                    case Rarity.Rara: return "Se renueva cada 4 turnos";
-                    case Rarity.Epica: return "Se renueva cada 2 turnos";
-                    default: return "";
-                }
-            }
-        }
+        /// <summary>Extra tooltip line: marks the golden ones, blank otherwise.</summary>
+        public string GoldenText => golden ? "Efecto dorado" : string.Empty;
 
         public Sprite Icon => icon;
         public int Price => price;
-        public Rarity EffectRarity => rarity;
         public string DescriptionForTooltip => descriptionForTooltip;
         public EffectType Type => type;
         public TargetStat Stat => stat;

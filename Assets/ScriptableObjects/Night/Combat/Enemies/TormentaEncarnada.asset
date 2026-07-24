@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: TormentaEncarnada
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.Night.EnemyData
   enemyName: Tormenta Encarnada
-  sprite: {fileID: 21300000, guid: 460f937b9ebca8d438cfa68ce187c0d8, type: 3}
+  sprite: {fileID: 21300000, guid: b2a86b1afd997eb4e9abba4c039b86c5, type: 3}
   descriptionForTooltip: "Una criatura el\xE9ctrica veloz e impredecible que golpea
     antes de desaparecer."
   health: 18
@@ -22,3 +22,5 @@ MonoBehaviour:
   type: 4
   ability: {fileID: 0}
   die: {fileID: 11400000, guid: cab836d45bf5e434da000bf3f67d7340, type: 2}
+  healDropChance: 0
+  healDropAmount: 5

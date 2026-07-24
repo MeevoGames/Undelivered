@@ -77,10 +77,10 @@ namespace Undelivered.Night
             else
             {
                 var pool = new List<EffectData>();
-                foreach (EffectData e in allEffects) if (e != null && (int)e.EffectRarity <= tier) pool.Add(e);
+                foreach (EffectData e in allEffects) if (e != null && EffectTier(e) <= tier) pool.Add(e);
                 for (int i = 0; i < count && pool.Count > 0; i++)
                 {
-                    EffectData pick = WeightedPick(pool, e => Weight((int)e.EffectRarity, tier));
+                    EffectData pick = WeightedPick(pool, e => Weight(EffectTier(e), tier));
                     if (pick == null) break;
                     result.Add(pick);
                     pool.Remove(pick);
@@ -89,7 +89,10 @@ namespace Undelivered.Night
             return result;
         }
 
-        // Peaks when the item's level/rarity matches the box target; falls off with distance.
+        // Golden effects are the top-tier loot; everything else sits at the bottom tier.
+        private static int EffectTier(EffectData effect) => effect != null && effect.IsGolden ? 2 : 0;
+
+        // Peaks when the item's level/tier matches the box target; falls off with distance.
         private float Weight(int value, int target) => Mathf.Pow(falloff, Mathf.Abs(value - target));
 
         private static void Grant(IItem item)

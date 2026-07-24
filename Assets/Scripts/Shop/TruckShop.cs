@@ -33,6 +33,22 @@ namespace Undelivered.Shop
         /// <summary>Raised after a truck is successfully bought (the tutorial listens for this).</summary>
         public event System.Action<TruckData> Bought;
 
+        /// <summary>
+        /// The cheapest truck that still has stock today, or null if none are left. The tutorial uses it to
+        /// tell whether the player can still buy their way out of an empty table.
+        /// </summary>
+        public TruckData CheapestAvailable()
+        {
+            TruckData best = null;
+            foreach (TruckShopItem item in _items)
+            {
+                TruckData truck = item != null ? item.Truck : null;
+                if (truck == null || Remaining(truck) <= 0) continue;
+                if (best == null || truck.Price < best.Price) best = truck;
+            }
+            return best;
+        }
+
         /// <summary>The shop row for a truck, or null (used by the tutorial to blink its buy button).</summary>
         public TruckShopItem FindItem(TruckData truck)
         {

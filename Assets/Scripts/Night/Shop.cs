@@ -32,21 +32,12 @@ namespace Undelivered.Night
         [SerializeField] private BoxView boxItemPrefab;
         [SerializeField] private List<BoxData> boxPool = new List<BoxData>();
 
-        [Header("Buttons (wire their onClick to Reroll / UpgradeBuild)")]
+        [Header("Buttons (wire its onClick to Reroll)")]
         [SerializeField] private Button rerollButton;
-        [SerializeField] private Button upgradeButton;
-        [Tooltip("Text that shows the upgrade cost (cleared at max).")]
-        [SerializeField] private TextMeshProUGUI upgradePriceText;
-        [Tooltip("Separate text that shows \"MAX.\" when the deck is maxed.")]
-        [SerializeField] private TextMeshProUGUI upgradeButtonLabel;
-        [SerializeField] private string maxLabel = "MAX.";
 
         [Header("Reroll cost")]
         [Tooltip("First reroll costs this; each further reroll adds it again (8, 16, 24...). Resets per tournament.")]
         [SerializeField] private int rerollBaseCost = 8;
-
-        [Header("Upgrade costs per level (deck slots 3, 4, 5, 6)")]
-        [SerializeField] private int[] upgradeCosts = { 30, 60, 120, 240 };
 
         [Header("Reroll shake")]
         [SerializeField] private float shakeDuration = 0.25f;
@@ -124,33 +115,6 @@ namespace Undelivered.Night
                 if (_views[i] != null && _views[i].transform is RectTransform rect) StartCoroutine(Shake(rect));
             }
             RefreshAffordability();
-        }
-
-        /// <summary>Upgrade button: +1 to the deck's dice/effect slots for this level's gem cost.</summary>
-        public void UpgradeBuild()
-        {
-            if (Deck.Instance == null || Deck.Instance.Slots >= Deck.MaxSlots)
-            {
-                Debug.LogWarning("El deck ya está al máximo.");
-                return;
-            }
-
-            int cost = UpgradeCost();
-            if (NightWallet.Instance == null || !NightWallet.Instance.TrySpend(cost))
-            {
-                Debug.LogWarning("No alcanzan las gemas para mejorar el deck.");
-                return;
-            }
-
-            Deck.Instance.UpgradeSlots(); // +1 dice slot; the effect deck's cap mirrors it
-            RefreshAffordability();
-        }
-
-        private int UpgradeCost()
-        {
-            int bought = Deck.Instance != null ? Deck.Instance.Slots - Deck.MinSlots : 0;
-            if (upgradeCosts == null || bought < 0 || bought >= upgradeCosts.Length) return int.MaxValue;
-            return upgradeCosts[bought];
         }
 
         private void Buy(int slot)
@@ -287,25 +251,6 @@ namespace Undelivered.Night
             if (rerollButton != null)
             {
                 SetOpacity(rerollButton.gameObject, gems >= RerollCost() ? 1f : 0.5f);
-            }
-
-            if (upgradeButton != null)
-            {
-                bool maxed = Deck.Instance != null && Deck.Instance.Slots >= Deck.MaxSlots;
-                if (maxed)
-                {
-                    upgradeButton.interactable = false;
-                    SetOpacity(upgradeButton.gameObject, 1f);
-                    if (upgradeButtonLabel != null) upgradeButtonLabel.text = maxLabel;
-                    if (upgradePriceText != null) upgradePriceText.text = string.Empty;
-                }
-                else
-                {
-                    upgradeButton.interactable = true;
-                    int cost = UpgradeCost();
-                    SetOpacity(upgradeButton.gameObject, gems >= cost ? 1f : 0.5f);
-                    if (upgradePriceText != null) upgradePriceText.text = cost.ToString();
-                }
             }
         }
 

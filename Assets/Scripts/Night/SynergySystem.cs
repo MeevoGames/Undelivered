@@ -30,10 +30,26 @@ namespace Undelivered.Night
         private int[] _roundsActive;   // parallel to _possible: rounds each synergy has been continuously active
         private int[] _appliedHealth;  // per slot index: max-health bonus currently applied (for clean revert)
         private int[] _appliedShield;  // per slot index: shield bonus currently applied
-        private SynergyData _primary;  // first active synergy (shown in the enemy detail panel)
+        private SynergyData _primary;  // first active synergy
+        private EnemySlot[] _lastSlots;      // the board as of the last check, so ActiveFor can map a slot
+        private List<int>[] _lastMatched;    // and which enemies each synergy covered
 
-        /// <summary>The first currently-active synergy, or null — the enemy detail panel shows its name.</summary>
+        /// <summary>The first currently-active synergy, or null.</summary>
         public SynergyData PrimaryActive => _primary;
+
+        /// <summary>Every active synergy that includes this enemy — its detail window lists them all.</summary>
+        public List<SynergyData> ActiveFor(EnemySlot slot)
+        {
+            var active = new List<SynergyData>();
+            if (slot == null || _lastSlots == null || _lastMatched == null) return active;
+
+            int index = System.Array.IndexOf(_lastSlots, slot);
+            if (index < 0) return active;
+
+            for (int p = 0; p < _possible.Count && p < _lastMatched.Length; p++)
+                if (_lastMatched[p].Contains(index)) active.Add(_possible[p]);
+            return active;
+        }
 
         /// <summary>Board just built: list the possible synergies as icons and apply their opening bonuses.</summary>
         public void StartCombat(EnemySlot[] slots)
@@ -72,6 +88,9 @@ namespace Undelivered.Night
 
             ApplyBonuses(slots, matched);
             UpdateIcons(matched);
+
+            _lastSlots = slots;     // remembered so ActiveFor can answer per enemy
+            _lastMatched = matched;
         }
 
         /// <summary>New round: run the per-round outcomes (heal / +max health), then reconcile.</summary>
@@ -104,6 +123,9 @@ namespace Undelivered.Night
 
             ApplyBonuses(slots, matched);
             UpdateIcons(matched);
+
+            _lastSlots = slots;     // remembered so ActiveFor can answer per enemy
+            _lastMatched = matched;
         }
 
         /// <summary>Combat over: remove every synergy icon and forget all state.</summary>
@@ -117,6 +139,8 @@ namespace Undelivered.Night
             _appliedHealth = null;
             _appliedShield = null;
             _primary = null;
+            _lastSlots = null;
+            _lastMatched = null;
         }
 
         // ----- evaluation -----

@@ -6,6 +6,7 @@ using Undelivered.Game;
 using Undelivered.Night;
 using Undelivered.Player;
 using Undelivered.Progression;
+using Undelivered.Tutorial;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -16,10 +17,11 @@ namespace Undelivered.DebugTools
     /// "-" again or ESCAPE hides it. Type a command and press Enter to run it. Commands:
     /// <list type="bullet">
     /// <item>give random effect|dice|box [N] — N copies (default 1), e.g. "give random dice 3"</item>
-    /// <item>give effect R [N] — N random effects of rarity R (1 Común, 2 Rara, 3 Épica)</item>
-    /// <item>upgrade level — opens the level-up stat picker; upgrade deck [N] — +N deck slots</item>
+    /// <item>give golden [N] — N random golden effects</item>
+    /// <item>upgrade level — opens the level-up stat picker</item>
     /// <item>heal xN, shield xN, rich xN (gold), gems xN — add N of that resource</item>
     /// <item>maxheal — refill the player's health and shield</item>
+    /// <item>jumptuto — skip the current mode's tutorial (day or night, not both)</item>
     /// <item>clean — empty the inventory and both decks</item>
     /// <item>allunlock — reveal every glossary entry; alllock — forget the whole glossary</item>
     /// <item>uulock — buy every day-mode upgrade at every level</item>
@@ -115,17 +117,15 @@ namespace Undelivered.DebugTools
                             case "box": GiveRandomBox(count); return;
                         }
                     }
-                    else if (t.Length >= 3 && t[1] == "effect")
+                    else if (t.Length >= 2 && t[1] == "golden")
                     {
-                        if (TryAmount(t[2], out int rarity)) GiveEffectByRarity(rarity, CountAt(t, 3));
-                        else Report("Uso: give effect 1|2|3 [cantidad]");
+                        GiveGoldenEffect(CountAt(t, 2));
                         return;
                     }
                     break;
 
                 case "upgrade":
                     if (t.Length >= 2 && t[1] == "level") { UpgradeLevel(); return; }
-                    if (t.Length >= 2 && t[1] == "deck") { UpgradeDeck(CountAt(t, 2)); return; }
                     break;
 
                 case "heal": if (Amount(t, out int h)) Heal(h); return;
@@ -134,6 +134,7 @@ namespace Undelivered.DebugTools
                 case "gems": if (Amount(t, out int gm)) Gems(gm); return;
 
                 case "maxheal": MaxHeal(); return;
+                case "jumptuto": JumpTuto(); return;
                 case "clean": Clean(); return;
                 case "allunlock": AllUnlock(); return;
                 case "alllock": AllLock(); return;
@@ -209,23 +210,20 @@ namespace Undelivered.DebugTools
             ReportGiven(given, last, "caja", "cajas", "No hay cajas en el pool.");
         }
 
-        private void GiveEffectByRarity(int n, int count)
+        private void GiveGoldenEffect(int count)
         {
-            if (n < 1 || n > 3) { Report("La rareza debe ser 1 (Común), 2 (Rara) o 3 (Épica)."); return; }
-            EffectData.Rarity rarity = (EffectData.Rarity)(n - 1);
-
             IReadOnlyList<EffectData> pool = Effects();
-            List<EffectData> filtered = pool == null ? null : pool.Where(x => x != null && x.EffectRarity == rarity).ToList();
+            List<EffectData> golden = pool == null ? null : pool.Where(x => x != null && x.IsGolden).ToList();
 
             int given = 0; string last = null;
             for (int i = 0; i < count; i++)
             {
-                EffectData e = RandomOf(filtered);
+                EffectData e = RandomOf(golden);
                 if (e == null || Inventory.Instance == null) break;
                 Inventory.Instance.AddEffect(e);
                 given++; last = e.EffectName;
             }
-            ReportGiven(given, last, $"efecto {rarity}", $"efectos {rarity}", $"No hay efectos de rareza {rarity}.");
+            ReportGiven(given, last, "efecto dorado", "efectos dorados", "No hay efectos dorados en el pool.");
         }
 
         // Summarises a repeated give: none, one (name), or a count with the last item.
@@ -242,15 +240,6 @@ namespace Undelivered.DebugTools
             if (p == null || LevelUpPanel.Instance == null) { Report("No hay panel de subida de nivel."); return; }
             LevelUpPanel.Instance.Show(p, () => { });
             Report("Subida de nivel abierta.");
-        }
-
-        private void UpgradeDeck(int count)
-        {
-            if (Deck.Instance == null) { Report("No hay deck."); return; }
-            int done = 0;
-            for (int i = 0; i < count; i++) { if (!Deck.Instance.UpgradeSlots()) break; done++; }
-            if (done == 0) Report("El deck ya está al máximo.");
-            else Report($"Deck ampliado a {Deck.Instance.Slots} espacios.");
         }
 
         private void Heal(int n)
@@ -330,10 +319,29 @@ namespace Undelivered.DebugTools
 
         private void Switch()
         {
-            ModeSwitcher switcher = UnityEngine.Object.FindFirstObjectByType<ModeSwitcher>();
+            ModeSwitcher switcher = UnityEngine.Object.FindAnyObjectByType<ModeSwitcher>();
             if (switcher == null) { Report("No hay ModeSwitcher."); return; }
             switcher.SwitchMode();
             Report("Modo cambiado.");
+        }
+
+        // Skips only the current mode's tutorial (day vs night, per the mode switcher).
+        private void JumpTuto()
+        {
+            ModeSwitcher switcher = UnityEngine.Object.FindAnyObjectByType<ModeSwitcher>();
+            bool night = switcher != null && switcher.IsNight;
+            if (night)
+            {
+                NightTutorial nt = UnityEngine.Object.FindAnyObjectByType<NightTutorial>();
+                if (nt != null) { nt.Skip(); Report("Tutorial de noche saltado."); }
+                else Report("No hay tutorial de noche en escena.");
+            }
+            else
+            {
+                WorkTutorial wt = UnityEngine.Object.FindAnyObjectByType<WorkTutorial>();
+                if (wt != null) { wt.Skip(); Report("Tutorial de dia saltado."); }
+                else Report("No hay tutorial de dia en escena.");
+            }
         }
 
         // ----- helpers -----

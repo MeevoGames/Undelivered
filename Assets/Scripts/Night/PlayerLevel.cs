@@ -22,8 +22,8 @@ namespace Undelivered.Night
         [SerializeField] private float growthPerLevel = 1.35f;
 
         [Header("UI")]
-        [Tooltip("The XP bar (non-interactable). Its value fills toward the current XP.")]
-        [SerializeField] private Slider xpBar;
+        [Tooltip("The XP bar: a Filled Image whose fillAmount (0..1) tracks the XP toward the next level (1 = 100%).")]
+        [SerializeField] private Image xpBar;
         [SerializeField] private TextMeshProUGUI levelText;
         [Tooltip("How fast the bar visually catches up to the real XP (units/sec).")]
         [SerializeField] private float barFillSpeed = 40f;
@@ -60,6 +60,12 @@ namespace Undelivered.Night
             _xpToNext = XpForLevel(_level);
             _shownXp = 0f;
             UpdateBar(snap: true);
+
+            // These fail silently otherwise, which is easy to mistake for the system being broken.
+            if (xpBar == null)
+                Debug.LogWarning($"{nameof(PlayerLevel)}: 'xpBar' is unassigned — the XP bar can't fill. Assign an Image with Image Type = Filled.", this);
+            if (xpIconPrefab == null || iconContainer == null)
+                Debug.LogWarning($"{nameof(PlayerLevel)}: 'xpIconPrefab' / 'iconContainer' unassigned — no XP icons will fly to the bar.", this);
         }
 
         private void OnDestroy()
@@ -71,8 +77,11 @@ namespace Undelivered.Night
         {
             if (xpBar == null) return;
             _shownXp = Mathf.MoveTowards(_shownXp, _xp, barFillSpeed * Time.unscaledDeltaTime);
-            xpBar.value = _shownXp;
+            xpBar.fillAmount = Fraction(_shownXp);
         }
+
+        // The XP fraction (0..1) toward the next level — the bar's fillAmount.
+        private float Fraction(float xp) => _xpToNext > 0 ? Mathf.Clamp01(xp / _xpToNext) : 0f;
 
         /// <summary>Adds XP (damage): the bar fills toward the threshold. The level-up itself is resolved by <see cref="PlayLevelUp"/>.</summary>
         public void GainXp(int amount)
@@ -104,10 +113,12 @@ namespace Undelivered.Night
         /// <summary>Spawns XP icons over <paramref name="from"/> that fly to the bar (cosmetic; XP already counted).</summary>
         public void SpawnXpIcons(RectTransform from, int count)
         {
-            if (xpIconPrefab == null || iconContainer == null || xpTarget == null || from == null || count <= 0) return;
+            // With no explicit target the icons simply fly to the bar itself.
+            RectTransform target = xpTarget != null ? xpTarget : (xpBar != null ? xpBar.rectTransform : null);
+            if (xpIconPrefab == null || iconContainer == null || target == null || from == null || count <= 0) return;
 
             Vector2 start = LocalPointOf(from);
-            Vector2 end = LocalPointOf(xpTarget);
+            Vector2 end = LocalPointOf(target);
             int n = Mathf.Min(count, Mathf.Max(1, maxIconsPerHit));
             for (int i = 0; i < n; i++)
             {
@@ -121,13 +132,9 @@ namespace Undelivered.Night
 
         private void UpdateBar(bool snap = false)
         {
-            if (xpBar != null)
-            {
-                xpBar.minValue = 0f;
-                xpBar.maxValue = _xpToNext;
-                if (snap) { _shownXp = _xp; xpBar.value = _shownXp; }
-            }
-            if (levelText != null) levelText.text = _level.ToString();
+            if (snap) _shownXp = _xp;
+            if (xpBar != null) xpBar.fillAmount = Fraction(_shownXp);
+            if (levelText != null) levelText.text = $"Lvl. {_level}";
         }
 
         // A RectTransform's position expressed in the icon container's local space.

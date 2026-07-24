@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using Undelivered.Player;
 using Undelivered.UI;
 using UnityEngine;
@@ -42,6 +43,11 @@ namespace Undelivered.Night
         [SerializeField] private EffectDeck effectDeck;
         [SerializeField] private PlayerLevel level;         // XP / level system
         [SerializeField] private LevelUpPanel levelUpPanel; // stat-upgrade UI
+        [Tooltip("Announcement shown before the level-up UI (same style as the combat intro).")]
+        [SerializeField] private BouncePanel levelUpAnnounce;
+        [SerializeField] private TMP_Text levelUpAnnounceText;
+        [SerializeField] private string levelUpAnnounceMessage = "¡Subes de nivel!";
+        [SerializeField] private float levelUpAnnounceHold = 1f;
         [Tooltip("How long the heal-room fountain stays before it sends its heal icons.")]
         [SerializeField] private float healRoomHoldSeconds = 0.8f;
 
@@ -58,6 +64,15 @@ namespace Undelivered.Night
         [SerializeField] private CameraShake cameraShake;
         [Tooltip("The COMENZAR COMBATE button — disabled while the dice deck is empty.")]
         [SerializeField] private Button beginCombatButton;
+
+        [Header("Combat counter (fixed, top-left)")]
+        [Tooltip("Lists the tournament's combats, e.g. \"01 • 02 • [03] • 04\", with the current one bracketed.")]
+        [SerializeField] private TMP_Text combatCounterText;
+        [SerializeField] private string combatSeparator = "•";
+        [Tooltip("Colour of the combat being played (#A13D18).")]
+        [SerializeField] private Color combatCurrentColor = new Color(0.631f, 0.239f, 0.094f);
+        [Tooltip("Colour of the other numbers and the separators (#52382E).")]
+        [SerializeField] private Color combatOtherColor = new Color(0.322f, 0.220f, 0.180f);
 
         [Header("Defeat")]
         [SerializeField] private GameOverPanel gameOverPanel;
@@ -125,7 +140,17 @@ namespace Undelivered.Night
             SetPlayerInput(false);
             while (lvl.HasPendingLevelUp)
             {
-                yield return lvl.PlayLevelUp(); // bar fills → holds → empties, then the UI opens
+                yield return lvl.PlayLevelUp(); // bar fills → holds → empties
+
+                // "¡Subes de nivel!" bounces in, holds, then bounces back out as the stat-upgrade UI arrives.
+                if (levelUpAnnounce != null)
+                {
+                    if (levelUpAnnounceText != null) levelUpAnnounceText.text = levelUpAnnounceMessage;
+                    yield return levelUpAnnounce.Show();
+                    yield return new WaitForSecondsRealtime(levelUpAnnounceHold);
+                    StartCoroutine(levelUpAnnounce.Hide()); // leaves at the same time the panel comes in
+                }
+
                 bool done = false;
                 ui.Show(ResolvedPlayer, () => done = true);
                 while (!done) yield return null;
@@ -212,6 +237,7 @@ namespace Undelivered.Night
         private void ResetArena()
         {
             if (thrower != null) thrower.ClearTable();
+            if (combatCounterText != null) combatCounterText.text = string.Empty; // no combat, no counter
             SynergyEndCombat();                                           // remove every synergy icon
             if (enemies != null) enemies.Build(null);                     // no enemies on the board
             if (turnBar != null) turnBar.Build(new List<TurnOrderBar.Participant>());
@@ -287,8 +313,63 @@ namespace Undelivered.Night
             StartCombat(encounter);
         }
 
+        /// <summary>
+        /// Tutorial: empties the hub (tournament list, shop/inventory/gems, pre-combat buttons) so a combat
+        /// announcement isn't shown over them. The combat itself starts later, with StartTournament.
+        /// </summary>
+        public void HideHub()
+        {
+            if (screens != null) screens.ClearHub();
+        }
+
+        /// <summary>
+        /// Tutorial: forces the first tournament — no list, no prep view. Sets it as the current tournament
+        /// and drops straight into its first combat (the starter-kit deck is already equipped).
+        /// </summary>
+        public void StartTournament(TournamentData tournament)
+        {
+            if (tournament == null || tournament.Combats.Count == 0) return;
+            PrepareTournament(tournament);
+            BeginPreparedCombat();
+        }
+
+        /// <summary>
+        /// Tutorial: forces a tournament and brings the arena on screen with its enemies already placed,
+        /// but holds the first turn — so an announcement can play over the real scene instead of an empty
+        /// one. Follow it with <see cref="BeginPreparedCombat"/>.
+        /// </summary>
+        public void PrepareTournament(TournamentData tournament)
+        {
+            if (tournament == null || tournament.Combats.Count == 0) return;
+
+            _currentEntry = null;
+            currentTournament = tournament;
+            _combatIndex = 0;
+            encounter = tournament.Combats[0];
+
+            if (closeForTodayButton != null) closeForTodayButton.SetActive(false);
+            if (screens != null) screens.StartTournamentDirect(); // the arena bounces in (prep view skipped)
+            SetupCombat(encounter);
+            _combatEnded = true; // nothing acts until the announcement is over
+        }
+
+        /// <summary>Takes the first turn of a tournament set up by <see cref="PrepareTournament"/>.</summary>
+        public void BeginPreparedCombat()
+        {
+            _combatEnded = false;
+            BeginTurnAt(0);
+        }
+
         /// <summary>Starts the first combat of a tournament: fresh deck (unlocked), fresh enemies, turn 1.</summary>
         public void StartCombat(EncounterData combat)
+        {
+            SetupCombat(combat);
+            BeginTurnAt(0);
+        }
+
+        // Everything a combat needs to be on screen and ready — but without taking the first turn, so an
+        // announcement can play over the finished arena.
+        private void SetupCombat(EncounterData combat)
         {
             _combatIndex = 0;
             ResetCombatState(combat);
@@ -296,13 +377,12 @@ namespace Undelivered.Night
             if (ResolvedPlayer != null) ResolvedPlayer.ResetForCombat(); // full health, revived
             if (enemies != null) { enemies.Build(combat); SubscribeEnemyDamage(); }
             if (deck != null) deck.StartCombat();                         // full deck: unlock + un-spend every die
-            if (effectDeck != null) effectDeck.StartCombat();             // Épica effects available again
+            if (effectDeck != null) effectDeck.StartCombat();             // shuffled draw pile + opening hand
 
             SynergyStartCombat();  // list this line-up's synergies and apply their opening bonuses (before turn order)
             BuildTurnOrder();
             RebuildTurnBar();
             RefreshLuck(); // dice show their base luck %
-            BeginTurnAt(0);
         }
 
         // Clears all per-combat state (keeps level/XP, permanent stats, and deck locks).
@@ -327,6 +407,35 @@ namespace Undelivered.Night
             _luck.Clear();
             _playerTurn = 0;
             _round = 1;
+
+            UpdateCombatCounter(); // runs for the first combat and for every AdvanceToNextCombat
+        }
+
+        // "01 • 02 • [03] • 04" — the combat being played is bracketed and highlighted.
+        private void UpdateCombatCounter()
+        {
+            if (combatCounterText == null) return;
+
+            if (currentTournament == null || currentTournament.Combats.Count == 0)
+            {
+                combatCounterText.text = string.Empty;
+                return;
+            }
+
+            string current = ColorUtility.ToHtmlStringRGB(combatCurrentColor);
+            string other = ColorUtility.ToHtmlStringRGB(combatOtherColor);
+
+            var line = new System.Text.StringBuilder();
+            for (int i = 0; i < currentTournament.Combats.Count; i++)
+            {
+                if (i > 0) line.Append($"<color=#{other}> {combatSeparator} </color>");
+
+                string number = (i + 1).ToString("00");
+                line.Append(i == _combatIndex
+                    ? $"<color=#{current}>[{number}]</color>"
+                    : $"<color=#{other}>{number}</color>");
+            }
+            combatCounterText.text = line.ToString();
         }
 
         // XP + healing drops: listen for damage and death on each freshly-built enemy slot.
@@ -377,7 +486,7 @@ namespace Undelivered.Night
 
             if (ResolvedPlayer != null) ResolvedPlayer.ClearCombatBoosts(); // health/shield carry over; drop the per-combat boosts
             if (deck != null) deck.RefreshDeck();       // un-spend the dice that aren't locked
-            if (effectDeck != null) effectDeck.RefreshEffects(); // renew the effect deck
+            if (effectDeck != null) effectDeck.StartCombat();    // fresh draw pile + opening hand
 
             if (enemies != null)
             {
@@ -485,7 +594,6 @@ namespace Undelivered.Night
             {
                 _playerTurn++;
                 _luck.Expire(_playerTurn); // luck bonuses whose turns have passed fall off
-                if (effectDeck != null) effectDeck.TickCooldowns(); // Épica renews in 2 turns, Rara in 4
                 RefreshLuck();
                 SetPlayerInput(true);
                 if (deck != null) deck.BeginTurn(); // refresh the deck if the player is out of dice
@@ -561,6 +669,7 @@ namespace Undelivered.Night
             RefreshAllStatuses();   // markers reflect the marks that just dropped
 
             SynergyRoundStart();    // per-round synergy boons (heal / +max health) + re-check the icons
+            if (effectDeck != null) effectDeck.DrawForRound(); // deal this round's effects (capped at the hand limit)
 
             if (!_orderManipulated && _pendingManips.Count == 0) return; // no turn-order change to apply
 
@@ -727,7 +836,7 @@ namespace Undelivered.Night
             int bonus = total - shownBase;
 
             // ORDER: the results are in → play the attack, THEN the target reacts.
-            ActorPlayAttack();
+            ActorPlayAttack(baseValue); // the die's raw face drives the animation, not the final damage
             yield return new WaitForSecondsRealtime(attackImpactDelay);
 
             if (counterattack)
@@ -753,8 +862,8 @@ namespace Undelivered.Night
                     EnemySlot target = enemies.ClosestEnemy();
                     if (target != null)
                     {
-                        if (skipShield) target.ApplyHealthDamage(total); // type 10: straight to HP, ignoring shield
-                        else target.ApplyDamage(total);                  // shield absorbs first
+                        if (skipShield) target.ApplyHealthDamage(total, baseValue); // type 10: straight to HP, ignoring shield
+                        else target.ApplyDamage(total, baseValue);                  // shield absorbs first
                         if (shownBase > 0) target.ShowNumber(shownBase, FloatingNumbers.Kind.Damage); // normal damage
                         if (bonus > 0) target.ShowNumber(bonus, FloatingNumbers.Kind.Bonus);           // "+X" (effect / second die)
                         Shake();
@@ -827,7 +936,7 @@ namespace Undelivered.Night
                     if (deck != null) deck.RefreshDeck();
                     break;
                 case EffectData.RenewalKind.EffectDeck:
-                    if (effectDeck != null) effectDeck.RefreshEffects();
+                    if (effectDeck != null) effectDeck.RecycleDiscard();
                     break;
                 case EffectData.RenewalKind.UsedDie:
                     if (deck != null && thrower != null) deck.RenewDie(thrower.LastDie);
@@ -835,7 +944,7 @@ namespace Undelivered.Night
                 case EffectData.RenewalKind.LastEffect:
                     if (_lastUsedEffect != null && effectDeck != null)
                     {
-                        effectDeck.RenewEffect(_lastUsedEffect);
+                        effectDeck.RecycleDiscard();
                         _lastUsedEffect = null; // consumed the renewal target
                     }
                     break;
@@ -934,7 +1043,7 @@ namespace Undelivered.Night
             {
                 foreach (EffectData block in _pendingBlocks) if (block != null) damage = block.Transform(damage);
                 // Común blocks only hit the first enemy; Épica (non-Común) stay for the rest of the round.
-                _pendingBlocks.RemoveAll(b => b == null || b.EffectRarity == EffectData.Rarity.Comun);
+                _pendingBlocks.RemoveAll(b => b == null || !b.IsGolden);
             }
 
             // If the roll changed (frozen and/or blocked), show the new number on the enemy die + shake.
@@ -945,7 +1054,7 @@ namespace Undelivered.Night
             }
 
             // ORDER: the result is in → play the attack, THEN the player takes damage (recoils).
-            ActorPlayAttack();
+            ActorPlayAttack(original); // the die's raw face, before freeze/blocks changed the damage
             yield return new WaitForSecondsRealtime(attackImpactDelay);
 
             PlayerCombatant target = ResolvedPlayer;
@@ -958,7 +1067,7 @@ namespace Undelivered.Night
                 int dmg = damage;
                 if (dmg > 0 && _pendingCounterMods != null)
                     foreach (EffectData m in _pendingCounterMods) if (m != null) dmg = m.ModifyRoll(dmg);
-                ApplyCounterattack(dmg, enemyIndex); // shows the number (even 0); deals damage only if > 0
+                ApplyCounterattack(dmg, enemyIndex, original); // shows the number (even 0); deals damage only if > 0
                 reflected = dmg > 0;
                 _pendingCounter = CounterMode.None;
                 _pendingCounterMods = null;
@@ -967,8 +1076,8 @@ namespace Undelivered.Night
             {
                 // Skip-shield synergy: this enemy's hit lands straight on the player's health.
                 EnemySlot attacker = enemies != null ? enemies.Slot(enemyIndex) : null;
-                if (attacker != null && attacker.SkipsShield) target.ApplyHealthDamage(damage);
-                else target.ApplyDamage(damage); // triggers the player's hurt/death animation
+                if (attacker != null && attacker.SkipsShield) target.ApplyHealthDamage(damage, original);
+                else target.ApplyDamage(damage, original); // triggers the player's hurt/death animation
                 target.ShowNumber(damage, FloatingNumbers.Kind.Damage);
                 Shake();
             }
@@ -989,25 +1098,25 @@ namespace Undelivered.Night
 
         // Type 12: the reflected enemy hit — returned to its attacker, or dealt to every enemy. A 0 still shows
         // a "0" floating text on the target(s) to signal the counter was spent (even though it did nothing).
-        private void ApplyCounterattack(int damage, int attackerIndex)
+        private void ApplyCounterattack(int damage, int attackerIndex, int dieValue)
         {
             if (enemies == null) return;
 
             if (_pendingCounter == CounterMode.ToAll)
             {
-                for (int i = 0; i < EnemyCount; i++) HitCounter(enemies.Slot(i), damage);
+                for (int i = 0; i < EnemyCount; i++) HitCounter(enemies.Slot(i), damage, dieValue);
             }
             else
             {
-                HitCounter(enemies.Slot(attackerIndex), damage);
+                HitCounter(enemies.Slot(attackerIndex), damage, dieValue);
             }
             if (damage > 0) Shake();
         }
 
-        private void HitCounter(EnemySlot slot, int damage)
+        private void HitCounter(EnemySlot slot, int damage, int dieValue)
         {
             if (slot == null || !slot.IsAlive) return;
-            if (damage > 0) slot.ApplyDamage(damage);
+            if (damage > 0) slot.ApplyDamage(damage, dieValue);
             slot.ShowNumber(damage, FloatingNumbers.Kind.Damage); // even "0" — the counter was spent
         }
 
@@ -1078,7 +1187,6 @@ namespace Undelivered.Night
             RemoveRandomDice(penalty.diceLost);
             RemoveRandomEffects(penalty.effectsLost);
 
-            if (effectDeck != null) effectDeck.EndTournament(); // destroy the spent Rara effects too
         }
 
         private void RemoveRandomDice(int count)
@@ -1188,18 +1296,40 @@ namespace Undelivered.Night
                 if (!IsAlive(t)) continue;
                 if (t.IsPlayer)
                 {
-                    participants.Add(new TurnOrderBar.Participant { isPlayer = true, speed = PlayerSpeed, sprite = PlayerSprite });
+                    participants.Add(new TurnOrderBar.Participant
+                    {
+                        isPlayer = true, speed = PlayerSpeed, sprite = PlayerSprite,
+                        onSelected = ShowPlayerDetail
+                    });
                 }
                 else
                 {
                     EnemyData e = EnemyAt(t.EnemyIndex);
-                    participants.Add(new TurnOrderBar.Participant { isPlayer = false, speed = EnemySpeed(t.EnemyIndex), sprite = e != null ? e.Sprite : null });
+                    EnemySlot slot = enemies != null ? enemies.Slot(t.EnemyIndex) : null;
+                    participants.Add(new TurnOrderBar.Participant
+                    {
+                        isPlayer = false, speed = EnemySpeed(t.EnemyIndex), sprite = e != null ? e.Sprite : null,
+                        onSelected = () => ShowEnemyDetail(slot)
+                    });
                 }
             }
             turnBar.Build(participants);
             turnBar.SetCurrentTurn(AliveIndexOf(_current), true);
 
             RefreshAllStatuses(); // keep the state markers in sync (dead enemies clear theirs)
+        }
+
+        // Tapping a turn-bar slot opens the same detail window as tapping the combatant itself.
+        private void ShowPlayerDetail()
+        {
+            if (EnemyDetailPanel.Instance != null) EnemyDetailPanel.Instance.ShowPlayer(ResolvedPlayer);
+        }
+
+        /// <summary>Opens an enemy's detail window listing every synergy currently affecting it.</summary>
+        public void ShowEnemyDetail(EnemySlot slot)
+        {
+            if (slot == null || EnemyDetailPanel.Instance == null) return;
+            EnemyDetailPanel.Instance.Show(slot, synergy != null ? synergy.ActiveFor(slot) : null);
         }
 
         private EnemyData EnemyAt(int enemyIndex)
@@ -1234,27 +1364,23 @@ namespace Undelivered.Night
         {
             if (synergy == null) return;
             synergy.StartCombat(SynergySlots());
-            if (enemies != null) enemies.SetSynergy(synergy.PrimaryActive); // detail panel shows the first active one
         }
 
         private void SynergyEvaluate()
         {
             if (synergy == null) return;
             synergy.Evaluate(SynergySlots());
-            if (enemies != null) enemies.SetSynergy(synergy.PrimaryActive);
         }
 
         private void SynergyRoundStart()
         {
             if (synergy == null) return;
             synergy.RoundStart(SynergySlots());
-            if (enemies != null) enemies.SetSynergy(synergy.PrimaryActive);
         }
 
         private void SynergyEndCombat()
         {
             if (synergy != null) synergy.EndCombat();
-            if (enemies != null) enemies.SetSynergy(null);
         }
 
         private void ActorPlayThrow()
@@ -1264,11 +1390,21 @@ namespace Undelivered.Night
             else { EnemySlot slot = enemies != null ? enemies.Slot(_order[_current].EnemyIndex) : null; if (slot != null) slot.PlayThrow(); }
         }
 
-        private void ActorPlayAttack()
+        // The attack animation is weighted by the raw face of the die thrown, and for the heaviest tier the
+        // actor closes in on whoever it is about to hit.
+        private void ActorPlayAttack(int dieValue)
         {
             if (_order.Count == 0) return;
-            if (_order[_current].IsPlayer) { if (ResolvedPlayer != null) ResolvedPlayer.PlayAttack(); }
-            else { EnemySlot slot = enemies != null ? enemies.Slot(_order[_current].EnemyIndex) : null; if (slot != null) slot.PlayAttack(); }
+            if (_order[_current].IsPlayer)
+            {
+                EnemySlot victim = enemies != null ? enemies.ClosestEnemy() : null;
+                if (ResolvedPlayer != null) ResolvedPlayer.PlayAttack(dieValue, victim != null ? victim.transform as RectTransform : null);
+            }
+            else
+            {
+                EnemySlot slot = enemies != null ? enemies.Slot(_order[_current].EnemyIndex) : null;
+                if (slot != null) slot.PlayAttack(dieValue, ResolvedPlayer != null ? ResolvedPlayer.transform as RectTransform : null);
+            }
         }
 
         private void SetPlayerInput(bool enabled)

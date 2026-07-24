@@ -15,6 +15,13 @@ namespace Undelivered.UI
         {
             public Button button;
             public GameObject content;
+
+            [Tooltip("Image swapped between the two sprites below (defaults to the button's own image).")]
+            public Image image;
+            [Tooltip("Sprite while this tab is the selected one.")]
+            public Sprite selectedSprite;
+            [Tooltip("Sprite while this tab is not selected.")]
+            public Sprite unselectedSprite;
         }
 
         [SerializeField] private List<Tab> tabs = new List<Tab>();
@@ -56,6 +63,14 @@ namespace Undelivered.UI
                 {
                     // The active tab's button is disabled so it reads as "selected" and can't be re-clicked.
                     tab.button.interactable = !selected;
+                }
+
+                // Swap the tab's art (each tab can use its own pair of sprites).
+                Image graphic = tab.image != null ? tab.image : (tab.button != null ? tab.button.image : null);
+                if (graphic != null)
+                {
+                    Sprite sprite = selected ? tab.selectedSprite : tab.unselectedSprite;
+                    if (sprite != null) graphic.sprite = sprite;
                 }
             }
         }

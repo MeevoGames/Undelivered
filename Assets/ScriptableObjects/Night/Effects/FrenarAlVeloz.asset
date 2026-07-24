@@ -15,9 +15,9 @@ MonoBehaviour:
   effectName: Frenar al Veloz
   descriptionForTooltip: El personaje mas rapido pasa al ultimo lugar del orden de
     turnos.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b96d58d223bf5284192873c41ea3d722, type: 3}
   price: 25
-  rarity: 1
+  golden: 0
   type: 6
   rollOperation: 1
   amount: 2

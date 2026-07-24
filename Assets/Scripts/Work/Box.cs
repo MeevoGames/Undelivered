@@ -91,6 +91,13 @@ namespace Undelivered.Work
             hasDirectionLabel = Random.value < DirectionLabelChance;
         }
 
+        /// <summary>Forces the direction label on or off (the tutorial labels every box but one).</summary>
+        public void SetDirectionLabel(bool labeled)
+        {
+            hasDirectionLabel = labeled;
+            RefreshLabels();
+        }
+
         /// <summary>Rolls whether this box comes with a weight label (based on the upgrade chance).</summary>
         public void RollWeightLabel()
         {

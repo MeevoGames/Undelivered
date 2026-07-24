@@ -65,7 +65,7 @@ namespace Undelivered.Shop
         {
             if (stockText != null)
             {
-                stockText.text = remaining.ToString();
+                stockText.text = $"Max. {remaining}";
             }
             if (buyButton != null)
             {

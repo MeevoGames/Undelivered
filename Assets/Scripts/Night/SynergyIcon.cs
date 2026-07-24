@@ -29,12 +29,28 @@ namespace Undelivered.Night
             if (tooltip != null) tooltip.SetGeneral(data.SynergyName, data.Description);
         }
 
-        /// <summary>Active → normal sprite; not applying → the broken sprite (falls back to the normal one).</summary>
+        /// <summary>
+        /// Active → the normal sprite. Not applying → the broken sprite if the synergy has one; if it
+        /// doesn't, the icon is hidden instead, so a dropped synergy always reads on screen.
+        /// </summary>
         public void SetFulfilled(bool fulfilled)
         {
             if (image == null || _data == null) return;
-            Sprite broken = _data.BrokenIcon != null ? _data.BrokenIcon : _data.Icon;
-            image.sprite = fulfilled ? _data.Icon : broken;
+
+            if (fulfilled)
+            {
+                image.enabled = true;
+                image.sprite = _data.Icon;
+            }
+            else if (_data.BrokenIcon != null)
+            {
+                image.enabled = true;
+                image.sprite = _data.BrokenIcon;
+            }
+            else
+            {
+                image.enabled = false;
+            }
         }
     }
 }

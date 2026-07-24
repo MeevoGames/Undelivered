@@ -132,6 +132,7 @@ namespace Undelivered.Night
             _extra.Add(view);
             view.Setup(die);
             view.HideLuck();
+            view.HideDeckOnly();
             if (copy) view.ShowFace(result); // already showing the target number
 
             RectTransform rt = (RectTransform)view.transform;
@@ -186,6 +187,7 @@ namespace Undelivered.Night
                 _extra.Add(view);
                 view.Setup(mini);
                 view.HideLuck();
+                view.HideDeckOnly();
 
                 RectTransform rt = (RectTransform)view.transform;
                 rt.localScale = Vector3.one * miniDieScale;
@@ -257,6 +259,7 @@ namespace Undelivered.Night
             _current = Instantiate(thrownDiePrefab, throwZone, false);
             _current.Setup(die);
             _current.HideLuck(); // the luck % only shows in the deck
+            _current.HideDeckOnly();
 
             RectTransform rt = (RectTransform)_current.transform;
             Vector2 start = new Vector2(Random.Range(-launchSpreadX, launchSpreadX), launchStartY);

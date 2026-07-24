@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,6 +20,8 @@ namespace Undelivered.Night
         [SerializeField] private RectTransform panel;
         [SerializeField] private Image enemyImage;
         [SerializeField] private TextMeshProUGUI nameText;
+        [Tooltip("Name shown when the window is opened on the player instead of an enemy.")]
+        [SerializeField] private string playerName = "Jugador";
 
         [Header("Stats")]
         [SerializeField] private TextMeshProUGUI healthText;
@@ -55,21 +59,48 @@ namespace Undelivered.Night
             if (Instance == this) Instance = null;
         }
 
-        /// <summary>Fills the window from an enemy slot (current stats) and the combat's synergy, then bounces in.</summary>
-        public void Show(EnemySlot slot, SynergyData synergy)
+        /// <summary>Fills the window from an enemy slot (its FULL stats) and the combat's synergy, then bounces in.</summary>
+        public void Show(EnemySlot slot, IReadOnlyList<SynergyData> synergies)
         {
             if (slot == null || slot.Enemy == null) return;
-            Fill(slot.Enemy, slot.CurrentHealth, slot.CurrentShield, slot.Rarity, synergy);
+            // Always the enemy's full stats at its rarity, not what's left of them.
+            Fill(slot.Enemy, slot.Enemy.HealthAt(slot.Rarity), slot.Enemy.ShieldAt(slot.Rarity), slot.Rarity, synergies);
         }
 
         /// <summary>From enemy data (a combat-prep preview): shows full health/shield at the given rarity.</summary>
         public void Show(EnemyData enemy, EnemyRarity rarity, SynergyData synergy)
         {
             if (enemy == null) return;
-            Fill(enemy, enemy.HealthAt(rarity), enemy.ShieldAt(rarity), rarity, synergy);
+            Fill(enemy, enemy.HealthAt(rarity), enemy.ShieldAt(rarity), rarity,
+                synergy != null ? new[] { synergy } : null);
         }
 
-        private void Fill(EnemyData enemy, int health, int shield, EnemyRarity rarity, SynergyData synergy)
+        /// <summary>Fills the window with the player's own full stats (no rarity / ability / synergy / die).</summary>
+        public void ShowPlayer(PlayerCombatant player)
+        {
+            if (player == null) return;
+
+            if (enemyImage != null)
+            {
+                enemyImage.sprite = player.Sprite;
+                enemyImage.enabled = player.Sprite != null;
+            }
+
+            SetText(nameText, playerName);
+            SetText(healthText, player.MaxHealth.ToString());
+            SetText(speedText, player.Speed.ToString());
+            SetText(shieldText, player.BaseShield.ToString());
+
+            // The player has no rarity or ability, isn't part of a synergy, and throws a deck, not one die.
+            SetOptional(rarityText, null);
+            SetOptional(abilityText, null);
+            SetOptional(synergyText, (string)null);
+            BuildDie(null);
+
+            BounceIn();
+        }
+
+        private void Fill(EnemyData enemy, int health, int shield, EnemyRarity rarity, IReadOnlyList<SynergyData> synergies)
         {
             if (enemyImage != null)
             {
@@ -81,14 +112,44 @@ namespace Undelivered.Night
             SetText(healthText, health.ToString());
             SetText(speedText, enemy.Speed.ToString());
             SetText(shieldText, shield.ToString());
-            SetText(rarityText, rarity.ToString());
+            SetOptional(rarityText, rarity.ToString()); // optional, so the player's view can hide it
 
-            SetOptional(abilityText, enemy.Ability != null ? enemy.Ability.AbilityName : null);
-            SetOptional(synergyText, synergy != null ? synergy.SynergyName : null);
+            SetOptional(abilityText, enemy.Ability != null
+                ? Describe(enemy.Ability.AbilityName, enemy.Ability.Description)
+                : null);
+            SetOptional(synergyText, SynergyLines(synergies));
 
             BuildDie(enemy.Die);
 
             BounceIn();
+        }
+
+        // "Name: description." — the description keeps its own full stop rather than getting a second one.
+        private static string Describe(string name, string description)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return null;
+
+            string text = (description ?? string.Empty).Trim();
+            if (text.Length == 0) return name;
+            if (!text.EndsWith(".")) text += ".";
+            return $"{name}: {text}";
+        }
+
+        // Every synergy affecting this enemy, one per line.
+        private static string SynergyLines(IReadOnlyList<SynergyData> synergies)
+        {
+            if (synergies == null || synergies.Count == 0) return null;
+
+            var lines = new StringBuilder();
+            foreach (SynergyData synergy in synergies)
+            {
+                if (synergy == null) continue;
+                string line = Describe(synergy.SynergyName, synergy.Description);
+                if (string.IsNullOrEmpty(line)) continue;
+                if (lines.Length > 0) lines.Append('\n');
+                lines.Append(line);
+            }
+            return lines.Length > 0 ? lines.ToString() : null;
         }
 
         /// <summary>Closes the window (wire this to a close button).</summary>
@@ -109,6 +170,7 @@ namespace Undelivered.Night
             DieView view = Instantiate(dieViewPrefab, dieSlot, false);
             view.Setup(die);
             view.HideLuck(); // luck % only shows in the deck
+            view.HideDeckOnly();
         }
 
         private void BounceIn()

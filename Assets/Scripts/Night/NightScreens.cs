@@ -48,12 +48,7 @@ namespace Undelivered.Night
         [Tooltip("X the pre-combat buttons slide to (off-screen right).")]
         [SerializeField] private float buttonsExitX = 2000f;
 
-        [Header("Effect size bounce (px)")]
-        [SerializeField] private float sizeUndershoot = 615f;
-        [SerializeField] private float sizeOvershoot = 655f;
-        [SerializeField] private float sizeTarget = 640f;
-        [Tooltip("EffectPlayer's final anchoredPosition (anchor it to the bottom-left corner).")]
-        [SerializeField] private Vector2 effectPlayerPosition = new Vector2(30f, 30f);
+        [Header("Enemy effects panel (slides in; size stays fixed. The player's effect deck never moves)")]
         [Tooltip("EffectWorld's final anchoredPosition (anchor it to the bottom-right corner).")]
         [SerializeField] private Vector2 effectWorldPosition = new Vector2(-30f, 30f);
 
@@ -64,6 +59,7 @@ namespace Undelivered.Night
         [SerializeField] private float minSegment = 0.06f;
 
         private RectTransform _current;
+        private bool _hubCleared;
         private readonly Dictionary<RectTransform, Coroutine> _anims = new Dictionary<RectTransform, Coroutine>();
         private readonly Dictionary<RectTransform, (Vector2 pos, Vector2 size)> _initial =
             new Dictionary<RectTransform, (Vector2 pos, Vector2 size)>();
@@ -114,6 +110,7 @@ namespace Undelivered.Night
             SetY(combat, hiddenY);
             SetY(spaceTurn, hiddenY);
             _current = tournament;
+            _hubCleared = false; // the hub is back, so it can be cleared again next combat
         }
 
         private void CaptureInitial(RectTransform rt)
@@ -146,6 +143,44 @@ namespace Undelivered.Night
         }
 
         /// <summary>
+        /// Empties the hub so nothing is left behind an announcement: the tournament list bounces out, the
+        /// prep view and any open overlay (shop / inventory / gems) are put away, and the pre-combat
+        /// buttons leave to the right. Safe to call twice — the second call does nothing.
+        /// </summary>
+        public void ClearHub()
+        {
+            if (_hubCleared) return;
+            _hubCleared = true;
+
+            if (tournament != null) ExitClose(tournament); // the list leaves with a bounce
+            SetY(combat, hiddenY);                          // the prep view is skipped
+            SetY(shop, hiddenY);
+            SetY(inventory, hiddenY);
+            SetY(gems, hiddenY);
+
+            if (preCombatButtons != null)
+            {
+                foreach (RectTransform button in preCombatButtons) SlideX(button, buttonsExitX);
+            }
+            _current = null;
+        }
+
+        /// <summary>
+        /// Tutorial: straight from the tournament menu into combat. The hub is cleared, the turn space
+        /// drops in and the enemy effect panel slides over — the combat-prep view is skipped entirely.
+        /// </summary>
+        public void StartTournamentDirect()
+        {
+            ClearHub();                                     // no-op if an announcement already cleared it
+            EnterFromTop(spaceTurn);                        // the turn space drops in
+
+            // The effect deck (effectPlayer) never moves or resizes — it stays where the scene places it.
+            MoveBounceTo(effectWorld, effectWorldPosition);
+
+            _current = null;
+        }
+
+        /// <summary>
         /// "Comenzar": the combat-prep panel leaves to the left, the turn space drops in with a bounce,
         /// the pre-combat buttons leave to the right, and the effect panels bounce to size.
         /// </summary>
@@ -161,8 +196,8 @@ namespace Undelivered.Night
                 foreach (RectTransform button in preCombatButtons) SlideX(button, buttonsExitX);
             }
 
-            SizeBounce(effectPlayer, effectPlayerPosition); // resize + move to the bottom-left
-            SizeBounce(effectWorld, effectWorldPosition);   // resize + move to the bottom-right
+            // The effect deck (effectPlayer) never moves or resizes — it stays where the scene places it.
+            MoveBounceTo(effectWorld, effectWorldPosition);   // enemy effects slide to the bottom-right
 
             _current = null; // no longer on a vertical-overlay base
         }
@@ -260,58 +295,29 @@ namespace Undelivered.Night
             _anims[panel] = null;
         }
 
-        // Bounces a panel's HEIGHT through undershoot → overshoot → target (width stays fixed), and
-        // optionally slides its anchoredPosition to moveTo over the same time.
-        private void SizeBounce(RectTransform panel, Vector2? moveTo)
+        // Slides a panel's anchoredPosition to a target corner over a single smooth segment, WITHOUT
+        // changing its size (the effect deck keeps its authored size).
+        private void MoveBounceTo(RectTransform panel, Vector2 target)
         {
             if (panel == null) return;
             StopAnim(panel);
-            _anims[panel] = StartCoroutine(SizeRoutine(panel, moveTo));
+            _anims[panel] = StartCoroutine(MoveXY(panel, target));
         }
 
-        private IEnumerator SizeRoutine(RectTransform panel, Vector2? moveTo)
+        private IEnumerator MoveXY(RectTransform panel, Vector2 target)
         {
-            float[] heights = { sizeUndershoot, sizeOvershoot, sizeTarget };
+            Vector2 start = panel.anchoredPosition;
+            float distance = Vector2.Distance(target, start);
+            float duration = Mathf.Max(minSegment, distance / Mathf.Max(1f, speed));
 
-            Vector2 startPos = panel.anchoredPosition;
-            Vector2 endPos = moveTo ?? startPos;
-
-            // Pace each segment by how far the height travels; the position slides across the whole.
-            var durations = new float[heights.Length];
-            float total = 0f;
-            float prev = panel.sizeDelta.y;
-            for (int i = 0; i < heights.Length; i++)
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
             {
-                durations[i] = Mathf.Max(minSegment, Mathf.Abs(heights[i] - prev) / Mathf.Max(1f, speed));
-                total += durations[i];
-                prev = heights[i];
+                float k = Mathf.SmoothStep(0f, 1f, t / duration);
+                panel.anchoredPosition = Vector2.Lerp(start, target, k);
+                yield return null;
             }
-
-            float done = 0f;
-            for (int i = 0; i < heights.Length; i++)
-            {
-                float fromHeight = panel.sizeDelta.y;
-                for (float t = 0f; t < durations[i]; t += Time.unscaledDeltaTime)
-                {
-                    float h = Mathf.Lerp(fromHeight, heights[i], Mathf.SmoothStep(0f, 1f, t / durations[i]));
-                    SetHeight(panel, h);
-                    float g = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((done + t) / total));
-                    panel.anchoredPosition = Vector2.Lerp(startPos, endPos, g);
-                    yield return null;
-                }
-                SetHeight(panel, heights[i]);
-                done += durations[i];
-            }
-
-            SetHeight(panel, sizeTarget);
-            panel.anchoredPosition = endPos;
+            panel.anchoredPosition = target;
             _anims[panel] = null;
-        }
-
-        private static void SetHeight(RectTransform panel, float height)
-        {
-            Vector2 s = panel.sizeDelta;
-            panel.sizeDelta = new Vector2(s.x, height); // width fixed, only height changes
         }
 
         private void StopAnim(RectTransform panel)

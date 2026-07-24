@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Undelivered.Night
 {
@@ -11,7 +12,7 @@ namespace Undelivered.Night
     /// texts and a health bar (its width tracks health, like the enemies). Damage hits the shield first,
     /// then the health.
     /// </summary>
-    public class PlayerCombatant : MonoBehaviour
+    public class PlayerCombatant : MonoBehaviour, IPointerClickHandler
     {
         public static PlayerCombatant Instance { get; private set; }
 
@@ -23,6 +24,8 @@ namespace Undelivered.Night
         [Header("UI (optional)")]
         [SerializeField] private TextMeshProUGUI healthText;
         [SerializeField] private TextMeshProUGUI shieldText;
+        [Tooltip("The whole shield display (icon + number). Hidden while the shield is 0.")]
+        [SerializeField] private GameObject shieldObject;
         [SerializeField] private RectTransform healthBar;
         [SerializeField] private float fullBarWidth;
         [Tooltip("Where floating numbers appear around the player. Defaults to this transform.")]
@@ -57,7 +60,7 @@ namespace Undelivered.Night
             if (Instance != null && Instance != this) { Destroy(this); return; }
             Instance = this;
 
-            if (fullBarWidth <= 0f && healthBar != null) fullBarWidth = healthBar.rect.width;
+            EnsureBarWidth();
             _baseSpeed = speed;
             SetHealth(maxHealth);
             SetShield(shield);
@@ -88,6 +91,12 @@ namespace Undelivered.Night
             if (animator != null) animator.ResetState();
         }
 
+        // Tapping the player opens the same detail window the enemies use, with their own stats.
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (EnemyDetailPanel.Instance != null) EnemyDetailPanel.Instance.ShowPlayer(this);
+        }
+
         /// <summary>Spawns a floating number (damage/heal/effect) around the player.</summary>
         public void ShowNumber(int amount, FloatingNumbers.Kind kind)
         {
@@ -95,10 +104,10 @@ namespace Undelivered.Night
             if (anchor != null) FloatingNumbers.Spawn(anchor, amount, kind);
         }
 
-        /// <summary>Plays the player's attack animation (on the die result).</summary>
-        public void PlayAttack()
+        /// <summary>Plays the player's attack animation, weighted by the raw face of the die they threw.</summary>
+        public void PlayAttack(int dieValue = 0, RectTransform target = null)
         {
-            if (animator != null) animator.PlayAttack();
+            if (animator != null) animator.PlayAttack(dieValue, target);
         }
 
         /// <summary>Plays the player's throw wind-up (when they throw a die).</summary>
@@ -107,8 +116,11 @@ namespace Undelivered.Night
             if (animator != null) animator.PlayThrow();
         }
 
-        /// <summary>Applies damage: the shield absorbs first, then any remainder hits the health.</summary>
-        public void ApplyDamage(int amount)
+        /// <summary>
+        /// Applies damage: the shield absorbs first, then any remainder hits the health.
+        /// <paramref name="dieValue"/> is the raw face of the die that dealt it, which picks the reaction.
+        /// </summary>
+        public void ApplyDamage(int amount, int dieValue = 0)
         {
             if (amount <= 0) return;
 
@@ -123,13 +135,13 @@ namespace Undelivered.Night
 
             if (animator != null)
             {
-                if (IsAlive) animator.PlayHurt();
+                if (IsAlive) animator.PlayHurt(dieValue);
                 else animator.PlayDeath();
             }
         }
 
         /// <summary>Damages health directly, ignoring the shield (an enemy's skip-shield synergy).</summary>
-        public void ApplyHealthDamage(int amount)
+        public void ApplyHealthDamage(int amount, int dieValue = 0)
         {
             if (amount <= 0) return;
 
@@ -137,7 +149,7 @@ namespace Undelivered.Night
 
             if (animator != null)
             {
-                if (IsAlive) animator.PlayHurt();
+                if (IsAlive) animator.PlayHurt(dieValue);
                 else animator.PlayDeath();
             }
         }
@@ -147,14 +159,30 @@ namespace Undelivered.Night
             int max = Mathf.Max(1, maxHealth);
             CurrentHealth = Mathf.Clamp(value, 0, max);
             if (healthText != null) healthText.text = CurrentHealth.ToString();
-            if (healthBar != null)
+
+            EnsureBarWidth(); // the bar's authored size is the 100% reference
+            if (healthBar != null && fullBarWidth > 0f)
                 healthBar.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, fullBarWidth * ((float)CurrentHealth / max));
+        }
+
+        /// <summary>
+        /// Captures the health bar's authored width as the full-health reference. Done lazily because the
+        /// layout may not be built yet in Awake — until a real width is known the bar is left untouched,
+        /// so it can never be measured from an already-shrunk state.
+        /// </summary>
+        private void EnsureBarWidth()
+        {
+            if (fullBarWidth > 0f || healthBar == null) return;
+            float width = healthBar.rect.width;
+            if (width <= 0f) width = healthBar.sizeDelta.x;
+            if (width > 0f) fullBarWidth = width;
         }
 
         public void SetShield(int value)
         {
             CurrentShield = Mathf.Max(0, value);
             if (shieldText != null) shieldText.text = CurrentShield.ToString();
+            if (shieldObject != null) shieldObject.SetActive(CurrentShield > 0); // no shield → hide the whole display
         }
 
         /// <summary>Shows the current luck bonus above the player (0 hides the marker). Type 13.</summary>

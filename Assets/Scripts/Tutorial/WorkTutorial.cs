@@ -48,6 +48,23 @@ namespace Undelivered.Tutorial
             "Hay mas opciones, pero con esa ya deberias ir flama."
         };
 
+        [Header("Fallback calls (only if the player gets into trouble)")]
+        [Tooltip("The friend calls once after this many boxes are misclassified.")]
+        [SerializeField] private int badSortingThreshold = 2;
+        [SerializeField, TextArea] private string[] badSortingLines =
+        {
+            "Ey! El jefe me avisó que los paquetes no se están enviando bien.",
+            "Revisá a donde tienen que ir antes de mandarlos así nomás.",
+            "Me haces quedar mal."
+        };
+        [Tooltip("Played once if the day is stuck: quota unmet, no boxes left and no affordable truck in stock.")]
+        [SerializeField, TextArea] private string[] stuckLines =
+        {
+            "Hey Bro te vas a tener que esforzar un poco más, por ahora te tiro una ayuda y te mando un camión gratis pero tenes que salir adelante solo máquina."
+        };
+        [Tooltip("The free truck sent as a rescue after that call (the first type, Voltra).")]
+        [SerializeField] private TruckData rescueTruck;
+
         [Header("Boxes (steps 6-9)")]
         [SerializeField] private TruckManager truckManager;
         [Tooltip("The destination the first blinking box is forced to (its slot is the one that blinks).")]
@@ -59,6 +76,12 @@ namespace Undelivered.Tutorial
         [SerializeField] private RectTransform deliveryHintPrefab;
         [SerializeField] private float hintMoveSeconds = 0.8f;
         [SerializeField] private float hintHideSeconds = 0.15f;
+
+        [Header("Select hint (sits beside a blinking element and pulses)")]
+        [Tooltip("Sprite placed at the bottom-left of the blinking truck / Mejoras / Etiquetadora, pulsing until it is clicked.")]
+        [SerializeField] private RectTransform selectHintPrefab;
+        [Tooltip("Offset from the target's bottom-left corner.")]
+        [SerializeField] private Vector2 selectHintOffset;
 
         [Header("Truck shop (steps 9-11)")]
         [Tooltip("The left truck-shop panel; hidden until the first box is delivered.")]
@@ -93,11 +116,16 @@ namespace Undelivered.Tutorial
 
         private Coroutine _hintLoop;
         private GameObject _hintInstance;
+        private GameObject _selectHint;
+        private Coroutine _selectHintFollow;
+        private bool _phoneBusy; // only one call at a time — fallbacks wait their turn
 
         private void Awake()
         {
             // Awake runs before every Start, so this reliably holds back TruckManager's Start-spawn.
             TruckManager.SuppressAutoSpawn = runTutorial;
+            // Upgrades stay unbuyable until the tutorial introduces them (step 13).
+            UpgradeShop.PurchasesLocked = runTutorial;
         }
 
         private void Start()
@@ -109,9 +137,27 @@ namespace Undelivered.Tutorial
             }
             Subscribe();
             StartCoroutine(RunTutorial());
+            StartCoroutine(WatchMistakes()); // these two run alongside the scripted flow
+            StartCoroutine(WatchStuck());
         }
 
         private void OnDestroy() => Unsubscribe();
+
+        /// <summary>Debug ("jumptuto"): abort the day tutorial and leave a playable table.</summary>
+        public void Skip()
+        {
+            StopAllCoroutines();
+            StopDeliveryHint();
+            HideSelectHint();
+            TutorialHighlight.StopAll();
+            if (phone != null) phone.Cancel();
+            if (blackScreen != null) blackScreen.SetActive(false);          // reveal
+            if (truckManager != null && BoxCount() == 0) truckManager.SpawnInitialBoxes(); // make sure there are boxes
+
+            // The tutorial is over, so upgrades are buyable again.
+            if (upgradeShop != null) upgradeShop.SetPurchasesLocked(false);
+            else UpgradeShop.PurchasesLocked = false;
+        }
 
         // ----- the flow -----
 
@@ -128,7 +174,7 @@ namespace Undelivered.Tutorial
             // 2-5. The phone rings (the screen fades in), you answer, the friend talks over the typed
             // subtitles, then hangs up. The fade runs alongside the ring.
             StartCoroutine(FadeOutBlackScreen());
-            if (phone != null) yield return phone.PlayCall(introLines);
+            yield return Call(introLines);
 
             // 6. The first boxes fall.
             if (truckManager != null) truckManager.SpawnInitialBoxes();
@@ -170,12 +216,13 @@ namespace Undelivered.Tutorial
                 int price = tutorialTruck.Price;
                 yield return new WaitUntil(() => Gold() >= price);
                 Button truckBuy = ButtonFor(truckShop.FindItem(tutorialTruck));
-                if (truckBuy != null) Blink(truckBuy.gameObject);
+                if (truckBuy != null) { Blink(truckBuy.gameObject); ShowSelectHint(truckBuy.gameObject); }
 
                 // 11. Buy it (it drops a new batch of boxes), then order those.
                 _truckBought = false;
                 yield return new WaitUntil(() => _truckBought);
                 if (truckBuy != null) StopBlink(truckBuy.gameObject);
+                HideSelectHint();
 
                 deliveriesAtBuy = Deliveries();
                 int truckBoxes = Mathf.Max(0, Mathf.RoundToInt(tutorialTruck.TotalBoxes * TruckManager.BoxCountMultiplier));
@@ -187,23 +234,31 @@ namespace Undelivered.Tutorial
                 yield return new WaitUntil(() => Deliveries() - deliveriesAtBuy >= halfTruckTarget);
             else
                 yield return WaitForTableClear(); // fallback if no tutorial truck is configured
-            if (phone != null) yield return phone.PlayCall(labelLines);
+            yield return Call(labelLines); // Call() blocks the boxes for as long as the panel is up
 
-            // 13. The "Mejoras" button blinks.
-            if (mejorasButton != null) Blink(mejorasButton.gameObject);
+            // 13. Now that the friend has mentioned them, upgrades become buyable; "Mejoras" blinks.
+            if (upgradeShop != null) upgradeShop.SetPurchasesLocked(false);
+            if (mejorasButton != null) { Blink(mejorasButton.gameObject); ShowSelectHint(mejorasButton.gameObject); }
 
-            // 14. Open the upgrades tab, then the Etiquetadora buy button blinks; buying it labels some boxes.
+            // 14. Open the upgrades tab, then the Etiquetadora buy button blinks; buying it labels the boxes.
             if (etiquetadora != null && upgradeShop != null)
             {
                 yield return new WaitUntil(() => upgradesContent != null && upgradesContent.activeInHierarchy);
                 if (mejorasButton != null) StopBlink(mejorasButton.gameObject);
+                HideSelectHint();
 
-                Button upgradeBuy = ButtonFor(upgradeShop.FindItem(etiquetadora));
-                if (upgradeBuy != null) Blink(upgradeBuy.gameObject);
+                // Mark the buy button; if the row prefab has none wired, fall back to the whole row.
+                UpgradeShopItem row = upgradeShop.FindItem(etiquetadora);
+                GameObject upgradeTarget = row == null ? null
+                    : (row.BuyButton != null ? row.BuyButton.gameObject : row.gameObject);
+                if (upgradeTarget != null) { Blink(upgradeTarget); ShowSelectHint(upgradeTarget); }
 
                 _upgradeBought = false;
                 yield return new WaitUntil(() => _upgradeBought);
-                if (upgradeBuy != null) StopBlink(upgradeBuy.gameObject);
+                if (upgradeTarget != null) StopBlink(upgradeTarget);
+                HideSelectHint();
+
+                LabelAllBoxesButOne(); // every box on the table gets a label except one
             }
 
             // 15-16. Keep ordering until the quota is met: the number turns green, a tooltip shows and
@@ -212,6 +267,70 @@ namespace Undelivered.Tutorial
             if (quotaText != null) quotaText.color = quotaMetColor;
             if (quotaMetTooltip != null) quotaMetTooltip.SetActive(true);
             if (finishDayButton != null) Blink(finishDayButton.gameObject);
+        }
+
+        // ----- fallback calls -----
+
+        // Every call goes through here so a fallback never talks over the scripted flow.
+        private IEnumerator Call(string[] lines)
+        {
+            if (phone == null || lines == null || lines.Length == 0) yield break;
+            yield return new WaitUntil(() => !_phoneBusy);
+
+            _phoneBusy = true;
+            SetBoxesInteractive(false);  // no handling boxes while a message is being read
+            yield return phone.PlayCall(lines);
+            SetBoxesInteractive(true);   // back as soon as the phone panel is gone
+            _phoneBusy = false;
+        }
+
+        // Once the player has misclassified enough boxes, the friend calls to tell them off. Once a day.
+        private IEnumerator WatchMistakes()
+        {
+            yield return new WaitUntil(() => Incorrect() >= Mathf.Max(1, badSortingThreshold));
+            yield return Call(badSortingLines);
+        }
+
+        // If the day becomes unwinnable — quota unmet, nothing left on the table and no truck they can
+        // afford — the friend sends a free one so the day can still be finished. Once a day.
+        private IEnumerator WatchStuck()
+        {
+            // Only once the day has actually started. On load the table is empty and there's no gold
+            // either, so the condition would read as "stuck" before the player has done anything.
+            yield return new WaitUntil(() => BoxCount() > 0);
+
+            while (true)
+            {
+                yield return new WaitUntil(IsStuck);
+                yield return null;          // boxes are destroyed at end of frame; re-check once settled
+                if (!IsStuck()) continue;
+
+                yield return Call(stuckLines);
+                if (truckManager != null && rescueTruck != null) truckManager.SpawnTruck(rescueTruck);
+                yield break;
+            }
+        }
+
+        private bool IsStuck()
+        {
+            if (DayManager.Instance == null || DayManager.Instance.QuotaMet) return false;
+            if (BoxCount() > 0) return false; // there's still work on the table
+
+            TruckData cheapest = truckShop != null ? truckShop.CheapestAvailable() : null;
+            return cheapest == null || Gold() < cheapest.Price; // nothing in stock, or nothing affordable
+        }
+
+        // Boxes can't be touched at all while a tutorial message is being read — blocking raycasts stops
+        // dragging AND clicking, and unlike disabling UIDraggable it doesn't fight the entrance animation
+        // (TruckManager turns that component off while a box flies in).
+        private static void SetBoxesInteractive(bool interactive)
+        {
+            foreach (Box box in FindObjectsByType<Box>())
+            {
+                CanvasGroup group = box.GetComponent<CanvasGroup>();
+                if (group == null) group = box.gameObject.AddComponent<CanvasGroup>();
+                group.blocksRaycasts = interactive;
+            }
         }
 
         // ----- events -----
@@ -286,8 +405,8 @@ namespace Undelivered.Tutorial
             while (box != null && (drag == null || !drag.IsDragging))
             {
                 hint.gameObject.SetActive(true);
-                Vector3 from = box.transform.position;
-                Vector3 to = slot.transform.position;
+                Vector3 from = CenterOf(box.transform);
+                Vector3 to = CenterOf(slot.transform); // the slot's centre, not its pivot/corner
 
                 for (float t = 0f; t < move && box != null && (drag == null || !drag.IsDragging); t += Time.deltaTime)
                 {
@@ -303,19 +422,61 @@ namespace Undelivered.Tutorial
             _hintLoop = null;
         }
 
-        private void Blink(GameObject go)
+        private static void Blink(GameObject go) => TutorialHighlight.Blink(go);
+        private static void StopBlink(GameObject go) => TutorialHighlight.StopBlink(go);
+
+        // Places the pulsing "select this" hint at the bottom-left of a blinking element.
+        private void ShowSelectHint(GameObject target)
         {
-            if (go == null) return;
-            TutorialHighlight h = go.GetComponent<TutorialHighlight>();
-            if (h == null) h = go.AddComponent<TutorialHighlight>();
-            h.Play();
+            HideSelectHint();
+            if (selectHintPrefab == null || target == null) return;
+
+            Canvas canvas = target.GetComponentInParent<Canvas>();
+            Transform parent = canvas != null ? canvas.transform : target.transform.parent;
+            RectTransform hint = Instantiate(selectHintPrefab, parent, false);
+            hint.SetAsLastSibling();
+            if (hint.GetComponent<PulseScale>() == null) hint.gameObject.AddComponent<PulseScale>();
+
+            _selectHint = hint.gameObject;
+            _selectHintFollow = StartCoroutine(FollowSelectHint(hint, target.transform));
         }
 
-        private void StopBlink(GameObject go)
+        // Keeps the hint pinned to the target's bottom-left corner every frame. The target's layout only
+        // settles a frame or two after its panel opens (the upgrades tab), and it can scroll — placing it
+        // once would leave the hint at a stale position.
+        private IEnumerator FollowSelectHint(RectTransform hint, Transform target)
         {
-            if (go == null) return;
-            TutorialHighlight h = go.GetComponent<TutorialHighlight>();
-            if (h != null) h.Stop();
+            while (hint != null && target != null)
+            {
+                hint.position = target is RectTransform rect
+                    ? rect.TransformPoint(new Vector3(rect.rect.xMin, rect.rect.yMin)) + (Vector3)selectHintOffset
+                    : target.position;
+                yield return null;
+            }
+        }
+
+        private void HideSelectHint()
+        {
+            if (_selectHintFollow != null) { StopCoroutine(_selectHintFollow); _selectHintFollow = null; }
+            if (_selectHint != null) { Destroy(_selectHint); _selectHint = null; }
+        }
+
+        // The labeler labels every box on the table but one, so the player sees the labels appear and
+        // still learns that not every box comes labeled.
+        private static void LabelAllBoxesButOne()
+        {
+            Box[] boxes = FindObjectsByType<Box>();
+            if (boxes.Length == 0) return;
+
+            int unlabeled = UnityEngine.Random.Range(0, boxes.Length);
+            for (int i = 0; i < boxes.Length; i++)
+                if (boxes[i] != null) boxes[i].SetDirectionLabel(i != unlabeled);
+        }
+
+        // The world-space centre of a UI element (its rect centre, independent of the pivot).
+        private static Vector3 CenterOf(Transform t)
+        {
+            return t is RectTransform rect ? rect.TransformPoint(rect.rect.center) : t.position;
         }
 
         private void PlaySfx(AudioClip clip)
@@ -352,23 +513,23 @@ namespace Undelivered.Tutorial
 
         private static Box FirstBox()
         {
-            Box[] boxes = FindObjectsByType<Box>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            Box[] boxes = FindObjectsByType<Box>();
             return boxes.Length > 0 ? boxes[0] : null;
         }
 
         private static Slot FindSlot(BoxType type)
         {
-            foreach (Slot slot in FindObjectsByType<Slot>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            foreach (Slot slot in FindObjectsByType<Slot>())
                 if (slot != null && slot.SlotType == type) return slot;
             return null;
         }
 
         private static Button ButtonFor(TruckShopItem item) => item != null ? item.BuyButton : null;
-        private static Button ButtonFor(UpgradeShopItem item) => item != null ? item.BuyButton : null;
 
-        private static int BoxCount() => FindObjectsByType<Box>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Length;
+        private static int BoxCount() => FindObjectsByType<Box>().Length;
         private static int Gold() => StatsManager.Instance != null ? StatsManager.Instance.Gold : 0;
         private static int Deliveries() => DayManager.Instance != null ? DayManager.Instance.CorrectDeliveries : 0;
+        private static int Incorrect() => DayManager.Instance != null ? DayManager.Instance.IncorrectDeliveries : 0;
         private static bool QuotaMet() => DayManager.Instance != null && DayManager.Instance.QuotaMet;
     }
 }

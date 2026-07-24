@@ -86,6 +86,9 @@ namespace Undelivered.Night
             }
         }
 
+        /// <summary>The natural luck (chance of the highest face) as a whole percentage.</summary>
+        public int BaseLuckPercent => Mathf.RoundToInt(BaseLuckFraction * 100f);
+
         /// <summary>
         /// Rolls with luck: <paramref name="luckFraction"/> is the chance of landing on the highest face.
         /// At the natural luck it reproduces <see cref="Roll"/>; higher biases toward the max face.

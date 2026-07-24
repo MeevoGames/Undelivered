@@ -20,9 +20,9 @@ namespace Undelivered.Night
         [SerializeField] private Image rarityBorder;
 
         [Header("Effect rarity colours")]
-        [SerializeField] private Color comunColor = new Color(0.62f, 0.62f, 0.58f);
-        [SerializeField] private Color raraColor = new Color(0.23f, 0.51f, 0.96f);
-        [SerializeField] private Color epicaColor = new Color(0.65f, 0.33f, 0.94f);
+        [SerializeField] private Color normalColor = new Color(0.62f, 0.62f, 0.58f);
+        [Tooltip("Border of a golden effect (a bigger-scale version of another one).")]
+        [SerializeField] private Color goldenColor = new Color(0.96f, 0.76f, 0.23f);
 
         private EnemyData _enemy;   // set for enemy cells → click opens the detail
         private EnemyRarity _rarity;
@@ -37,7 +37,7 @@ namespace Undelivered.Night
 
             TooltipTrigger t = GetComponent<TooltipTrigger>();
             if (t == null) return;
-            if (known && die != null) t.SetDice(die.DiceName, die.DescriptionForTooltip, die.FaceSprites());
+            if (known && die != null) t.SetDice(die.DiceName, die.DescriptionForTooltip, die.FaceSprites(), $"{die.BaseLuckPercent}% de Suerte.");
             else t.SetMessage("???");
         }
 
@@ -49,12 +49,12 @@ namespace Undelivered.Night
             if (rarityBorder != null)
             {
                 rarityBorder.enabled = effect != null;
-                if (effect != null) rarityBorder.color = RarityColor(effect.EffectRarity);
+                if (effect != null) rarityBorder.color = effect.IsGolden ? goldenColor : normalColor;
             }
 
             TooltipTrigger t = GetComponent<TooltipTrigger>();
             if (t == null) return;
-            if (known && effect != null) t.SetEffect(effect.EffectName, effect.DescriptionForTooltip, effect.DurationText);
+            if (known && effect != null) t.SetEffect(effect.EffectName, effect.DescriptionForTooltip, effect.GoldenText);
             else t.SetMessage("???");
         }
 
@@ -88,16 +88,6 @@ namespace Undelivered.Night
         {
             if (_enemy != null && _known && EnemyDetailPanel.Instance != null)
                 EnemyDetailPanel.Instance.Show(_enemy, _rarity, null); // synergy has no meaning outside combat
-        }
-
-        private Color RarityColor(EffectData.Rarity rarity)
-        {
-            switch (rarity)
-            {
-                case EffectData.Rarity.Rara: return raraColor;
-                case EffectData.Rarity.Epica: return epicaColor;
-                default: return comunColor;
-            }
         }
     }
 }

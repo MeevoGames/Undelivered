@@ -29,12 +29,14 @@ namespace Undelivered.UI
         [SerializeField] private TextMeshProUGUI generalTitle;
         [SerializeField] private TextMeshProUGUI generalDescription;
 
-        [Header("Dice (title + description + 6 faces)")]
+        [Header("Dice (title + description + 6 faces + luck)")]
         [SerializeField] private RectTransform diceWindow;
         [SerializeField] private TextMeshProUGUI diceTitle;
         [SerializeField] private TextMeshProUGUI diceDescription;
         [Tooltip("The 6 face images, in face order.")]
         [SerializeField] private Image[] diceFaces = new Image[6];
+        [Tooltip("Luck line, e.g. \"45% de Suerte.\"")]
+        [SerializeField] private TextMeshProUGUI diceLuck;
 
         [Header("Effect (title + description + duration)")]
         [SerializeField] private RectTransform effectWindow;
@@ -79,13 +81,14 @@ namespace Undelivered.UI
             Activate(generalWindow, direction, screenPosition);
         }
 
-        /// <summary>Dice: a title, a description and the die's 6 face sprites.</summary>
-        public void ShowDice(string title, string description, Sprite[] faces, TooltipDirection direction, Vector2 screenPosition)
+        /// <summary>Dice: a title, a description, the die's 6 face sprites and its luck line.</summary>
+        public void ShowDice(string title, string description, Sprite[] faces, string luck, TooltipDirection direction, Vector2 screenPosition)
         {
-            if (diceWindow == null) { ShowBasic(Combine(title, description), direction, screenPosition); return; }
+            if (diceWindow == null) { ShowBasic(Combine(Combine(title, description), luck), direction, screenPosition); return; }
             HideAll();
             SetText(diceTitle, title);
             SetText(diceDescription, description);
+            SetText(diceLuck, luck);
             if (diceFaces != null)
             {
                 for (int i = 0; i < diceFaces.Length; i++)
@@ -137,11 +140,27 @@ namespace Undelivered.UI
         }
 
         // Makes a window active, sizes it to its content THIS frame (so it isn't shown at the previous
-        // tooltip's size while a VerticalLayoutGroup/ContentSizeFitter catch up), then places it.
+        // tooltip's size while a ContentSizeFitter catches up), then places it.
+        //   1) A TMP text only computes its preferred size on a mesh update, so we force that FIRST.
+        //   2) Rebuilding only the window root doesn't resize a ContentSizeFitter that sits on a nested
+        //      "Content" child (the root doesn't drive it), so we rebuild every fitter/layout in the tree
+        //      bottom-up — inner content settles before its parents read it.
         private void Activate(RectTransform w, TooltipDirection direction, Vector2 screenPosition)
         {
             _active = w;
-            if (w != null) LayoutRebuilder.ForceRebuildLayoutImmediate(w);
+            if (w != null)
+            {
+                foreach (TMP_Text text in w.GetComponentsInChildren<TMP_Text>(true))
+                    text.ForceMeshUpdate();
+
+                RectTransform[] rects = w.GetComponentsInChildren<RectTransform>(true); // parents first
+                for (int i = rects.Length - 1; i >= 0; i--)                             // so rebuild children first
+                {
+                    RectTransform r = rects[i];
+                    if (r.GetComponent<ContentSizeFitter>() != null || r.GetComponent<LayoutGroup>() != null)
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(r);
+                }
+            }
             Position(direction, screenPosition);
         }
 

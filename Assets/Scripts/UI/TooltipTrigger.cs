@@ -28,6 +28,7 @@ namespace Undelivered.UI
         [SerializeField] private string duration;
 
         private Sprite[] _faces; // Dice faces, set at runtime
+        private string _diceLuck; // Dice luck line, set at runtime
 
         private bool HasContent => !string.IsNullOrWhiteSpace(message) || !string.IsNullOrWhiteSpace(title);
 
@@ -46,14 +47,18 @@ namespace Undelivered.UI
             kind = TooltipKind.General;
         }
 
-        /// <summary>Dice: a title, a description and the die's 6 face sprites.</summary>
-        public void SetDice(string titleValue, string description, Sprite[] faces)
+        /// <summary>Dice: a title, a description, the die's 6 face sprites and a luck line.</summary>
+        public void SetDice(string titleValue, string description, Sprite[] faces, string luck = "")
         {
             title = titleValue;
             message = description;
             _faces = faces;
+            _diceLuck = luck;
             kind = TooltipKind.Dice;
         }
+
+        /// <summary>Updates just the luck line (the deck's live luck % changes with luck effects).</summary>
+        public void SetDiceLuck(string luck) => _diceLuck = luck;
 
         /// <summary>Effect: a title, a description and a duration line.</summary>
         public void SetEffect(string titleValue, string description, string durationValue)
@@ -87,7 +92,7 @@ namespace Undelivered.UI
             switch (kind)
             {
                 case TooltipKind.General: m.ShowGeneral(title, message, direction, position); break;
-                case TooltipKind.Dice: m.ShowDice(title, message, _faces, direction, position); break;
+                case TooltipKind.Dice: m.ShowDice(title, message, _faces, _diceLuck, direction, position); break;
                 case TooltipKind.Effect: m.ShowEffect(title, message, duration, direction, position); break;
                 default: m.ShowBasic(message, direction, position); break;
             }

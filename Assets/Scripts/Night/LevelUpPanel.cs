@@ -152,6 +152,7 @@ namespace Undelivered.Night
             _die = Instantiate(dieViewPrefab, diceSlot, false);
             _die.Setup(levelUpDie);
             _die.HideLuck(); // luck % only shows in the deck
+            _die.HideDeckOnly();
 
             RectTransform rt = _die.transform as RectTransform;
             if (rt == null) { _die.ShowFace(FaceForValue(result)); yield break; }

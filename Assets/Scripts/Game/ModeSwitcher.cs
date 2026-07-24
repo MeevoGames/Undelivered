@@ -27,6 +27,9 @@ namespace Undelivered.Game
         private bool _changed;
         private bool _isNight;
 
+        /// <summary>True while the night (dice) mode is the active one.</summary>
+        public bool IsNight => _isNight;
+
         private void Reset() => animator = GetComponent<Animator>();
 
         private void Awake()

@@ -43,6 +43,26 @@ namespace Undelivered.Night
         [SerializeField] private float strikeTime = 0.08f;
         [SerializeField] private float attackReturnTime = 0.15f;
 
+        [Header("Attack — dash (die 4-6): accelerate forward, shake at the far point, return")]
+        [SerializeField] private float dashDistance = 90f;
+        [SerializeField] private float dashAngle = 14f;
+        [SerializeField] private float dashTime = 0.13f;
+        [SerializeField] private float dashShakeTime = 0.12f;
+        [SerializeField] private float dashShakeMagnitude = 7f;
+        [SerializeField] private float dashReturnTime = 0.2f;
+
+        [Header("Attack — close in (die 7-9): move beside the target, heavier strike, return")]
+        [Tooltip("Gap left between the attacker and its target when it closes in.")]
+        [SerializeField] private float approachGap = 120f;
+        [Tooltip("Distance used when no target was given.")]
+        [SerializeField] private float approachFallback = 160f;
+        [SerializeField] private float approachTime = 0.18f;
+        [Tooltip("How much heavier the strike is than the plain one.")]
+        [SerializeField] private float heavyMultiplier = 1.5f;
+        [SerializeField] private float heavyShakeTime = 0.16f;
+        [SerializeField] private float heavyShakeMagnitude = 11f;
+        [SerializeField] private float approachReturnTime = 0.28f;
+
         [Header("Throw (die wind-up: a small forward lean, grounded, no colour)")]
         [SerializeField] private float throwAngle = 10f;
         [SerializeField] private float throwSnapTime = 0.08f;
@@ -55,6 +75,49 @@ namespace Undelivered.Night
         [SerializeField] private float hurtSnapTime = 0.06f;
         [SerializeField] private float hurtHoldTime = 0.18f;
         [SerializeField] private float hurtReturnTime = 0.25f;
+
+        [Header("Hurt — pushed back (die 4-6): shoved back, front legs up, then recompose")]
+        [SerializeField] private float pushBackDistance = 45f;
+        [Tooltip("How far it rears up, as if about to fall over backward.")]
+        [SerializeField] private float pushRearAngle = 26f;
+        [SerializeField] private float pushSnapTime = 0.09f;
+        [SerializeField] private float pushHoldTime = 0.16f;
+        [Tooltip("The rotation is recomposed FIRST, so it never drags along the floor while tilted.")]
+        [SerializeField] private float pushUprightTime = 0.16f;
+        [Tooltip("Only then does it walk forward to where it stood.")]
+        [SerializeField] private float pushWalkBackTime = 0.22f;
+
+        [Header("Hurt — stunned (die 7-9): staggers back, head down, slow recovery")]
+        [SerializeField] private float stunBackDistance = 30f;
+        [Tooltip("How far the head dips forward, dazed.")]
+        [SerializeField] private float stunHeadAngle = 20f;
+        [SerializeField] private float stunSnapTime = 0.1f;
+        [SerializeField] private float stunHoldTime = 0.35f;
+        [Tooltip("Slower than the other recoveries — it is shaking off the daze.")]
+        [SerializeField] private float stunReturnTime = 0.55f;
+
+        [Header("Hit FX — a decorative mark on whoever takes the hit, by die tier")]
+        [Tooltip("Impact lines (impact.png) — a light hit, die 1-3, at a random point on the sprite.")]
+        [SerializeField] private Sprite impactSprite;
+        [Tooltip("Knock mark (knock.png) — a medium hit, die 4-6, over the head.")]
+        [SerializeField] private Sprite knockSprite;
+        [Tooltip("Accent mark (accent.png, the red X) — a heavy hit, die 7-9, at a random point on the sprite.")]
+        [SerializeField] private Sprite accentSprite;
+        [SerializeField] private float fxSize = 120f;
+        [SerializeField] private float fxLifeSeconds = 0.35f;
+        [Tooltip("How far above the top of the sprite the knock mark sits.")]
+        [SerializeField] private float knockHeadOffset = 20f;
+        [SerializeField] private Color fxColor = Color.white;
+
+        [Header("Slash trail — afterimages behind a dashing attack (die 4-6)")]
+        [Tooltip("Image the afterimages copy. Defaults to the tint target when it is an Image.")]
+        [SerializeField] private Image trailSource;
+        [Tooltip("Seconds between afterimages.")]
+        [SerializeField] private float trailInterval = 0.03f;
+        [Tooltip("How long each afterimage takes to fade out.")]
+        [SerializeField] private float trailFadeSeconds = 0.22f;
+        [SerializeField, Range(0f, 1f)] private float trailStartAlpha = 0.45f;
+        [SerializeField] private Color trailColor = Color.white;
 
         [Header("Death")]
         [SerializeField] private float deathHopBack = 30f;
@@ -105,11 +168,23 @@ namespace Undelivered.Night
             _body.anchoredPosition = _baseAnchored + GroundOffset(scaleX, scaleY, 0f); // squash from the floor up
         }
 
-        public void PlayAttack()
+        /// <summary>
+        /// Attacks with the weight of the die that was thrown (its raw face, whatever the final damage):
+        /// 0-3 the plain strike, 4-6 a dashing lunge, 7-9 closing in on <paramref name="target"/> first.
+        /// </summary>
+        public void PlayAttack(int dieValue = 0, RectTransform target = null)
         {
             if (_dead) return;
-            StartPose(AttackRoutine());
+            switch (Tier(dieValue))
+            {
+                case 2: StartPose(ApproachAttackRoutine(target)); break;
+                case 1: StartPose(DashAttackRoutine()); break;
+                default: StartPose(AttackRoutine()); break;
+            }
         }
+
+        // 0-3 → the plain animation, 4-6 → the stronger one, 7+ → the heaviest.
+        private static int Tier(int dieValue) => dieValue >= 7 ? 2 : dieValue >= 4 ? 1 : 0;
 
         /// <summary>A small forward lean (grounded, no colour) for throwing a die — like Hurt but forward.</summary>
         public void PlayThrow()
@@ -118,10 +193,19 @@ namespace Undelivered.Night
             StartPose(ThrowRoutine());
         }
 
-        public void PlayHurt()
+        /// <summary>
+        /// Reacts with the weight of the die that dealt the hit (its raw face): 1-3 the plain flinch,
+        /// 4-6 being shoved back onto its hind legs, 7-9 a dazed stagger with a slow recovery.
+        /// </summary>
+        public void PlayHurt(int dieValue = 0)
         {
             if (_dead) return;
-            StartPose(HurtRoutine());
+            switch (Tier(dieValue))
+            {
+                case 2: StartPose(StunnedRoutine()); break;
+                case 1: StartPose(PushedRoutine()); break;
+                default: StartPose(HurtRoutine()); break;
+            }
         }
 
         public void PlayDeath()
@@ -186,6 +270,172 @@ namespace Undelivered.Night
             _state = State.Idle;
         }
 
+        // Die 4-6: accelerate forward into a lunge, shake hard at the far point, then slide back.
+        private IEnumerator DashAttackRoutine()
+        {
+            _state = State.Attacking;
+            ResetPose();
+
+            Vector2 far = new Vector2(facingSign * dashDistance, 0f);
+            float lean = -facingSign * dashAngle; // leaning into the charge
+
+            StartCoroutine(TrailRoutine(dashTime + dashShakeTime)); // a slash trail follows the charge
+
+            yield return Tween(dashTime, k =>
+            {
+                float e = k * k; // accelerate
+                SetGroundedPose(Vector2.Lerp(Vector2.zero, far, e), Mathf.Lerp(0f, lean, e));
+            });
+
+            yield return ShakeAt(far, lean, dashShakeTime, dashShakeMagnitude); // impact
+
+            yield return Tween(dashReturnTime, k =>
+            {
+                float e = Mathf.SmoothStep(0f, 1f, k);
+                SetGroundedPose(Vector2.Lerp(far, Vector2.zero, e), Mathf.Lerp(lean, 0f, e));
+            });
+
+            ResetPose();
+            _state = State.Idle;
+        }
+
+        // Die 7-9: rush over next to the target, land a heavier version of the plain strike, then go back.
+        private IEnumerator ApproachAttackRoutine(RectTransform target)
+        {
+            _state = State.Attacking;
+            ResetPose();
+
+            Vector2 near = ApproachOffset(target);
+            float back = facingSign * windupAngle * heavyMultiplier;     // wind up away from the target
+            float forward = -facingSign * strikeAngle * heavyMultiplier; // and swing through it
+
+            // 1. close the distance fast
+            yield return Tween(approachTime, k => SetGroundedPose(Vector2.Lerp(Vector2.zero, near, k * k), 0f));
+
+            // 2. heavier strike, in place beside the target
+            yield return Tween(windupTime, k =>
+            {
+                float e = Mathf.SmoothStep(0f, 1f, k);
+                SetGroundedPose(near, Mathf.Lerp(0f, back, e));
+            });
+            yield return Tween(strikeTime, k =>
+            {
+                float e = k * k;
+                SetGroundedPose(near, Mathf.Lerp(back, forward, e));
+            });
+            yield return ShakeAt(near, forward, heavyShakeTime, heavyShakeMagnitude);
+
+            // 3. back to its own spot
+            yield return Tween(approachReturnTime, k =>
+            {
+                float e = Mathf.SmoothStep(0f, 1f, k);
+                SetGroundedPose(Vector2.Lerp(near, Vector2.zero, e), Mathf.Lerp(forward, 0f, e));
+            });
+
+            ResetPose();
+            _state = State.Idle;
+        }
+
+        // Die 4-6: shoved backward onto its hind legs, then recomposed — rotation first, THEN the walk
+        // forward, so it never drags along the floor while still tilted.
+        private IEnumerator PushedRoutine()
+        {
+            _state = State.Hurt;
+            ResetPose();
+            SetTint(hurtColor);
+
+            SpawnFx(knockSprite, HeadPoint()); // a knock mark pops over its head
+
+            Vector2 back = new Vector2(facingSign * pushBackDistance, 0f); // away from the attacker
+            float rear = facingSign * pushRearAngle;                        // front legs come off the floor
+
+            yield return Tween(pushSnapTime, k =>
+            {
+                float e = Mathf.SmoothStep(0f, 1f, k);
+                SetGroundedPose(Vector2.Lerp(Vector2.zero, back, e), Mathf.Lerp(0f, rear, e));
+            });
+            SetGroundedPose(back, rear);
+            yield return new WaitForSecondsRealtime(pushHoldTime);
+
+            // put the legs back down first...
+            yield return Tween(pushUprightTime, k =>
+            {
+                float e = Mathf.SmoothStep(0f, 1f, k);
+                SetGroundedPose(back, Mathf.Lerp(rear, 0f, e));
+                SetTint(Color.Lerp(hurtColor, _baseColor, e));
+            });
+
+            // ...and only then walk back to where it stood
+            yield return Tween(pushWalkBackTime, k =>
+            {
+                float e = Mathf.SmoothStep(0f, 1f, k);
+                SetGroundedPose(Vector2.Lerp(back, Vector2.zero, e), 0f);
+            });
+
+            ResetPose();
+            SetTint(_baseColor);
+            _state = State.Idle;
+        }
+
+        // Die 7-9: staggers back with its head hanging, dazed, and takes its time coming back.
+        private IEnumerator StunnedRoutine()
+        {
+            _state = State.Hurt;
+            ResetPose();
+            SetTint(hurtColor);
+
+            SpawnFx(accentSprite, RandomPointInBody()); // the red X marks the heavy hit
+
+            Vector2 back = new Vector2(facingSign * stunBackDistance, 0f);
+            float headDown = -facingSign * stunHeadAngle; // head dips forward
+
+            yield return Tween(stunSnapTime, k =>
+            {
+                float e = Mathf.SmoothStep(0f, 1f, k);
+                SetGroundedPose(Vector2.Lerp(Vector2.zero, back, e), Mathf.Lerp(0f, headDown, e));
+            });
+            SetGroundedPose(back, headDown);
+
+            yield return new WaitForSecondsRealtime(stunHoldTime); // dazed
+
+            yield return Tween(stunReturnTime, k => // slow recovery
+            {
+                float e = Mathf.SmoothStep(0f, 1f, k);
+                SetGroundedPose(Vector2.Lerp(back, Vector2.zero, e), Mathf.Lerp(headDown, 0f, e));
+                SetTint(Color.Lerp(hurtColor, _baseColor, e));
+            });
+
+            ResetPose();
+            SetTint(_baseColor);
+            _state = State.Idle;
+        }
+
+        // Jitters around a held pose, damping out — the impact of a heavy blow.
+        private IEnumerator ShakeAt(Vector2 position, float rotationZ, float duration, float magnitude)
+        {
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+            {
+                float damp = 1f - Mathf.Clamp01(t / Mathf.Max(0.01f, duration));
+                SetGroundedPose(position + UnityEngine.Random.insideUnitCircle * (magnitude * damp), rotationZ);
+                yield return null;
+            }
+            SetGroundedPose(position, rotationZ);
+        }
+
+        // How far to travel to end up beside the target (stopping short of it), along the facing axis.
+        private Vector2 ApproachOffset(RectTransform target)
+        {
+            if (_body == null) return Vector2.zero;
+            if (target == null) return new Vector2(facingSign * approachFallback, 0f);
+
+            Vector3 worldDelta = target.position - _body.position;
+            RectTransform parent = _body.parent as RectTransform;
+            Vector2 local = parent != null ? (Vector2)parent.InverseTransformVector(worldDelta) : (Vector2)worldDelta;
+
+            float distance = Mathf.Max(0f, Mathf.Abs(local.x) - approachGap);
+            return new Vector2(facingSign * distance, 0f); // stay on our own floor line
+        }
+
         private IEnumerator ThrowRoutine()
         {
             _state = State.Throwing;
@@ -217,6 +467,7 @@ namespace Undelivered.Night
             _state = State.Hurt;
             ResetPose();
             SetTint(hurtColor);
+            SpawnFx(impactSprite, RandomPointInBody()); // impact lines where the blow landed
 
             float back = facingSign * hurtAngle;
 
@@ -314,6 +565,94 @@ namespace Undelivered.Night
             float cos = Mathf.Cos(r), sin = Mathf.Sin(r);
             Vector2 rotated = new Vector2(scaled.x * cos - scaled.y * sin, scaled.x * sin + scaled.y * cos);
             return foot - rotated;
+        }
+
+        // ----- decorative FX -----
+
+        // Drops a short-lived sprite at a point given in the body's local space, then fades it out.
+        private void SpawnFx(Sprite sprite, Vector2 bodyLocalPoint)
+        {
+            if (sprite == null || _body == null) return;
+            RectTransform parent = _body.parent as RectTransform;
+            if (parent == null) return;
+
+            var go = new GameObject("CombatFx", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            var rect = (RectTransform)go.transform;
+            rect.SetParent(parent, false);
+            rect.SetAsLastSibling();                 // over the combatant
+            rect.sizeDelta = new Vector2(fxSize, fxSize);
+            rect.position = _body.TransformPoint(bodyLocalPoint);
+
+            var image = go.GetComponent<Image>();
+            image.sprite = sprite;
+            image.color = fxColor;
+            image.raycastTarget = false;
+
+            StartCoroutine(FadeAndDestroy(go, image, fxLifeSeconds));
+        }
+
+        // A random spot inside the sprite — where the blow "landed".
+        private Vector2 RandomPointInBody()
+        {
+            Rect r = _body != null ? _body.rect : new Rect();
+            return new Vector2(UnityEngine.Random.Range(r.xMin, r.xMax), UnityEngine.Random.Range(r.yMin, r.yMax));
+        }
+
+        // Just above the top of the sprite.
+        private Vector2 HeadPoint()
+        {
+            Rect r = _body != null ? _body.rect : new Rect();
+            return new Vector2(r.center.x, r.yMax + knockHeadOffset);
+        }
+
+        // Leaves fading copies of the sprite behind while the body charges forward.
+        private IEnumerator TrailRoutine(float duration)
+        {
+            Image source = trailSource != null ? trailSource : tintTarget as Image;
+            RectTransform parent = _body != null ? _body.parent as RectTransform : null;
+            if (source == null || parent == null) yield break;
+
+            for (float t = 0f; t < duration; t += trailInterval)
+            {
+                SpawnAfterimage(source, parent);
+                yield return new WaitForSecondsRealtime(Mathf.Max(0.01f, trailInterval));
+            }
+        }
+
+        private void SpawnAfterimage(Image source, RectTransform parent)
+        {
+            var go = new GameObject("SlashTrail", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            var rect = (RectTransform)go.transform;
+            rect.SetParent(parent, false);
+            rect.SetSiblingIndex(_body.GetSiblingIndex()); // slots in behind the body
+            rect.position = _body.position;
+            rect.rotation = _body.rotation;
+            rect.localScale = _body.localScale;
+            rect.sizeDelta = _body.rect.size;
+
+            var image = go.GetComponent<Image>();
+            image.sprite = source.sprite;
+            image.preserveAspect = source.preserveAspect;
+            image.raycastTarget = false;
+            Color color = trailColor;
+            color.a = trailStartAlpha;
+            image.color = color;
+
+            StartCoroutine(FadeAndDestroy(go, image, trailFadeSeconds));
+        }
+
+        private static IEnumerator FadeAndDestroy(GameObject go, Image image, float duration)
+        {
+            float startAlpha = image != null ? image.color.a : 1f;
+            for (float t = 0f; t < duration; t += Time.unscaledDeltaTime)
+            {
+                if (image == null) yield break;
+                Color color = image.color;
+                color.a = Mathf.Lerp(startAlpha, 0f, t / Mathf.Max(0.01f, duration));
+                image.color = color;
+                yield return null;
+            }
+            if (go != null) Destroy(go);
         }
 
         private void SetTint(Color color)

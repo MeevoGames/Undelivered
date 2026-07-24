@@ -11,12 +11,12 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbbb0000effe0000effe0000effe0007, type: 3}
   m_Name: Suerte
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   effectName: Suerte
   descriptionForTooltip: Suma tu tirada a tu suerte (todos los dados) durante 1 turno.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b96d58d223bf5284192873c41ea3d722, type: 3}
   price: 15
-  rarity: 0
+  golden: 0
   type: 13
   rollOperation: 1
   amount: 2

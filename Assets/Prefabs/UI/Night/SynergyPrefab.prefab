@@ -102,7 +102,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d756dd10825fbd447b498eaffd0662eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Undelivered.UI.TooltipTrigger
-  direction: 1
+  direction: 2
   kind: 1
   title: 
   message: 

@@ -24,6 +24,9 @@ namespace Undelivered.Items
         [Tooltip("Parent (the Items GameObject) the obtained items are listed under.")]
         [SerializeField] private Transform itemsParent;
 
+        [Tooltip("Shown while no item has been obtained yet (the empty 'Items Obtenidos' message).")]
+        [SerializeField] private GameObject emptyState;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -40,6 +43,11 @@ namespace Undelivered.Items
             {
                 Instance = null;
             }
+        }
+
+        private void Start()
+        {
+            if (emptyState != null) emptyState.SetActive(itemsParent == null || itemsParent.childCount == 0);
         }
 
         /// <summary>
@@ -81,6 +89,7 @@ namespace Undelivered.Items
             if (item != null && itemPrefab != null && itemsParent != null)
             {
                 Instantiate(itemPrefab, itemsParent, false).Setup(item);
+                if (emptyState != null) emptyState.SetActive(false); // no longer empty
             }
             return item;
         }
@@ -93,6 +102,7 @@ namespace Undelivered.Items
             {
                 Destroy(itemsParent.GetChild(i).gameObject);
             }
+            if (emptyState != null) emptyState.SetActive(true); // empty again (Destroy is deferred, so set it directly)
         }
     }
 }

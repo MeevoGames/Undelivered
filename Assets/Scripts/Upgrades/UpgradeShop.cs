@@ -28,6 +28,19 @@ namespace Undelivered.Upgrades
         /// <summary>Raised after an upgrade level is successfully bought (the tutorial listens for this).</summary>
         public event System.Action<UpgradeData> Bought;
 
+        /// <summary>
+        /// While true nothing can be bought here, however much gold the player has — the tutorial holds
+        /// upgrades back until it introduces them. Cleared for good once the tutorial reaches that step.
+        /// </summary>
+        public static bool PurchasesLocked;
+
+        /// <summary>Locks/unlocks buying and refreshes the rows so the buy buttons reflect it.</summary>
+        public void SetPurchasesLocked(bool locked)
+        {
+            PurchasesLocked = locked;
+            RefreshItems();
+        }
+
         /// <summary>The shop row for an upgrade, or null (used by the tutorial to blink its buy button).</summary>
         public UpgradeShopItem FindItem(UpgradeData upgrade)
         {
@@ -172,7 +185,7 @@ namespace Undelivered.Upgrades
         /// <summary>Buys the next level of an upgrade if affordable and not maxed.</summary>
         public void TryBuy(UpgradeData upgrade)
         {
-            if (upgrade == null)
+            if (upgrade == null || PurchasesLocked)
             {
                 return;
             }

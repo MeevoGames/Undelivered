@@ -15,9 +15,9 @@ MonoBehaviour:
   effectName: Saltar Escudo
   descriptionForTooltip: El valor del dado va directo a la vida del enemigo, ignorando
     su escudo.
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b96d58d223bf5284192873c41ea3d722, type: 3}
   price: 25
-  rarity: 1
+  golden: 0
   type: 10
   rollOperation: 1
   amount: 2

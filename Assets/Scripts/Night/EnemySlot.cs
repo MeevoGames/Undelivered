@@ -20,6 +20,8 @@ namespace Undelivered.Night
         [SerializeField] private TextMeshProUGUI nameText;
         [SerializeField] private TextMeshProUGUI healthText;
         [SerializeField] private TextMeshProUGUI shieldText;
+        [Tooltip("The whole shield display (icon + number). Hidden while the shield is 0.")]
+        [SerializeField] private GameObject shieldObject;
 
         [Tooltip("Health bar fill; only its width changes with the health fraction.")]
         [SerializeField] private RectTransform healthBar;
@@ -38,6 +40,14 @@ namespace Undelivered.Night
         [SerializeField] private Sprite poisonIcon;
         [Tooltip("Icon shown for Congelamiento (freeze) marks.")]
         [SerializeField] private Sprite freezeIcon;
+
+        [Tooltip("Name / description shown on each state marker's tooltip (same prefab, filled per state).")]
+        [SerializeField] private string burnName = "Quema";
+        [SerializeField, TextArea] private string burnDescription = "Inflige 2 de daño por marca al inicio del turno de este enemigo.";
+        [SerializeField] private string poisonName = "Veneno";
+        [SerializeField, TextArea] private string poisonDescription = "Inflige 1 de daño por marca al inicio de cualquier turno.";
+        [SerializeField] private string freezeName = "Congelamiento";
+        [SerializeField, TextArea] private string freezeDescription = "Reduce en 1 por marca el resultado del dado de este enemigo.";
 
         private StatusIcon[] _statusIcons; // one per StatusType (Burn, Poison, Freeze), created on demand
 
@@ -114,6 +124,7 @@ namespace Undelivered.Night
         {
             CurrentShield = Mathf.Max(0, shield);
             if (shieldText != null) shieldText.text = CurrentShield.ToString();
+            if (shieldObject != null) shieldObject.SetActive(CurrentShield > 0); // no shield → hide the whole display
         }
 
         public bool IsAlive => CurrentHealth > 0;
@@ -124,10 +135,10 @@ namespace Undelivered.Night
             if (transform is RectTransform rect) FloatingNumbers.Spawn(rect, amount, kind);
         }
 
-        /// <summary>Plays this enemy's attack animation (on the die result).</summary>
-        public void PlayAttack()
+        /// <summary>Plays this enemy's attack animation, weighted by the raw face of the die it threw.</summary>
+        public void PlayAttack(int dieValue = 0, RectTransform target = null)
         {
-            if (animator != null) animator.PlayAttack();
+            if (animator != null) animator.PlayAttack(dieValue, target);
         }
 
         /// <summary>Plays this enemy's throw wind-up (when it throws its die).</summary>
@@ -136,8 +147,11 @@ namespace Undelivered.Night
             if (animator != null) animator.PlayThrow();
         }
 
-        /// <summary>Applies damage: the shield absorbs first, then any remainder hits the health.</summary>
-        public void ApplyDamage(int amount)
+        /// <summary>
+        /// Applies damage: the shield absorbs first, then any remainder hits the health.
+        /// <paramref name="dieValue"/> is the raw face of the die that dealt it, which picks the reaction.
+        /// </summary>
+        public void ApplyDamage(int amount, int dieValue = 0)
         {
             if (amount <= 0) return;
 
@@ -152,14 +166,14 @@ namespace Undelivered.Night
 
             if (animator != null)
             {
-                if (IsAlive) animator.PlayHurt();
+                if (IsAlive) animator.PlayHurt(dieValue);
                 else animator.PlayDeath();
             }
             FireDamage(amount);
         }
 
         /// <summary>Damages health directly, ignoring the shield (skip-shield effect).</summary>
-        public void ApplyHealthDamage(int amount)
+        public void ApplyHealthDamage(int amount, int dieValue = 0)
         {
             if (amount <= 0) return;
 
@@ -167,7 +181,7 @@ namespace Undelivered.Night
 
             if (animator != null)
             {
-                if (IsAlive) animator.PlayHurt();
+                if (IsAlive) animator.PlayHurt(dieValue);
                 else animator.PlayDeath();
             }
             FireDamage(amount);
@@ -201,7 +215,23 @@ namespace Undelivered.Night
         private void FireDamage(int amount)
         {
             Damaged?.Invoke(amount);
-            if (!IsAlive && !_died) { _died = true; Died?.Invoke(); }
+            if (!IsAlive && !_died) { _died = true; DisableInteraction(); Died?.Invoke(); }
+        }
+
+        // A corpse can't be hovered or tapped: its raycasts are blocked (the object stays around while the
+        // death animation fades it out), its tooltip is switched off, and any tooltip already on screen is
+        // dismissed — otherwise the pointer never "exits" it and the tooltip would stay up.
+        private void DisableInteraction()
+        {
+            CanvasGroup group = GetComponent<CanvasGroup>();
+            if (group == null) group = gameObject.AddComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+
+            TooltipTrigger tooltip = GetComponent<TooltipTrigger>();
+            if (tooltip != null) tooltip.enabled = false;
+            if (TooltipManager.Instance != null) TooltipManager.Instance.Hide();
+
+            _onClick = null; // no detail window from a dead enemy either
         }
 
         /// <summary>Updates the state markers above the enemy; a count of 0 hides that state's marker.</summary>
@@ -223,7 +253,29 @@ namespace Undelivered.Night
             if (count <= 0) { marker.gameObject.SetActive(false); return; }
 
             marker.gameObject.SetActive(true);
-            marker.Set(IconFor(type), count);
+            marker.Set(IconFor(type), count, NameFor(type), DescriptionFor(type));
+        }
+
+        private string NameFor(StatusType type)
+        {
+            switch (type)
+            {
+                case StatusType.Burn: return burnName;
+                case StatusType.Poison: return poisonName;
+                case StatusType.Freeze: return freezeName;
+                default: return string.Empty;
+            }
+        }
+
+        private string DescriptionFor(StatusType type)
+        {
+            switch (type)
+            {
+                case StatusType.Burn: return burnDescription;
+                case StatusType.Poison: return poisonDescription;
+                case StatusType.Freeze: return freezeDescription;
+                default: return string.Empty;
+            }
         }
 
         // Creates the three markers (Burn, Poison, Freeze) once, in order, all hidden until they have marks.
